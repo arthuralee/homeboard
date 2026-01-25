@@ -19,6 +19,13 @@ export interface WeatherData {
   humidity: number;
   precipitation: number;
   windSpeed: number;
+  hourlyForecast: HourlyForecast[];
+}
+
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  weatherCode: number;
 }
 
 export interface SubwayFeedResponse {
