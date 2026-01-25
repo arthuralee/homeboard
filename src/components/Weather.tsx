@@ -91,19 +91,16 @@ export function Weather() {
   const weatherInfo = weatherDescriptions[weather.weatherCode] || { label: 'Unknown', icon: '❓' };
 
   return (
-    <div className="flex items-center gap-6">
-      <div className="text-6xl">
+    <div className="flex items-center gap-4">
+      <div className="text-5xl">
         {weatherInfo.icon}
       </div>
-      <div>
-        <div className="text-5xl font-light text-white">
+      <div className="text-right">
+        <div className="text-4xl font-light text-white">
           {weather.temperature}°F
         </div>
-        <div className="text-xl text-gray-400">
-          {weatherInfo.label}
-        </div>
-        <div className="text-lg text-gray-500">
-          Feels like {weather.feelsLike}°F
+        <div className="text-base text-gray-400">
+          {weatherInfo.label} · Feels {weather.feelsLike}°
         </div>
       </div>
     </div>

@@ -21,11 +21,11 @@ export function Clock() {
   });
 
   return (
-    <div className="text-center">
-      <div className="text-7xl font-light tracking-tight text-white">
+    <div className="flex items-baseline gap-4">
+      <div className="text-6xl font-light tracking-tight text-white">
         {timeString}
       </div>
-      <div className="text-2xl text-gray-400 mt-2">
+      <div className="text-xl text-gray-400">
         {dateString}
       </div>
     </div>

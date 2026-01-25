@@ -95,57 +95,62 @@ export function SubwayStatus() {
   }
 
   return (
-    <div className="space-y-6">
-      {groupedArrivals.map(({ station, uptown, downtown }) => (
-        <div key={station.id} className="space-y-3">
-          <h3 className="text-2xl font-semibold text-white">
-            {station.displayName}
-          </h3>
+    <div className="h-full flex flex-col">
+      {/* Stations in horizontal grid */}
+      <div className="flex-1 grid grid-cols-3 gap-4">
+        {groupedArrivals.map(({ station, uptown, downtown }) => (
+          <div key={station.id} className="flex flex-col min-h-0">
+            {/* Station name */}
+            <h3 className="text-2xl font-semibold text-white mb-2 flex-shrink-0">
+              {station.displayName}
+            </h3>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Uptown */}
-            <div className="space-y-2">
-              <div className="text-lg text-gray-400">Uptown</div>
-              {uptown.length === 0 ? (
-                <div className="text-gray-600">No trains</div>
-              ) : (
-                <div className="space-y-2">
-                  {uptown.map((arrival, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <SubwayLine line={arrival.routeId} size="md" />
-                      <span className="text-2xl font-medium text-white">
-                        {formatArrivalTime(arrival.arrivalTime)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Uptown and Downtown stacked */}
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
+              {/* Uptown */}
+              <div className="flex-1 min-h-0">
+                <div className="text-base text-gray-500 uppercase tracking-wide mb-1">Uptown</div>
+                {uptown.length === 0 ? (
+                  <div className="text-gray-600 text-xl">No trains</div>
+                ) : (
+                  <div className="space-y-1">
+                    {uptown.map((arrival, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <SubwayLine line={arrival.routeId} size="lg" />
+                        <span className="text-4xl font-semibold text-white tabular-nums">
+                          {formatArrivalTime(arrival.arrivalTime)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Downtown */}
-            <div className="space-y-2">
-              <div className="text-lg text-gray-400">Downtown</div>
-              {downtown.length === 0 ? (
-                <div className="text-gray-600">No trains</div>
-              ) : (
-                <div className="space-y-2">
-                  {downtown.map((arrival, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <SubwayLine line={arrival.routeId} size="md" />
-                      <span className="text-2xl font-medium text-white">
-                        {formatArrivalTime(arrival.arrivalTime)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Downtown */}
+              <div className="flex-1 min-h-0">
+                <div className="text-base text-gray-500 uppercase tracking-wide mb-1">Downtown</div>
+                {downtown.length === 0 ? (
+                  <div className="text-gray-600 text-xl">No trains</div>
+                ) : (
+                  <div className="space-y-1">
+                    {downtown.map((arrival, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <SubwayLine line={arrival.routeId} size="lg" />
+                        <span className="text-4xl font-semibold text-white tabular-nums">
+                          {formatArrivalTime(arrival.arrivalTime)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {lastUpdated && (
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-gray-600 mt-2 flex-shrink-0">
           Updated {lastUpdated.toLocaleTimeString()}
         </div>
       )}
