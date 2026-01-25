@@ -15,6 +15,16 @@ function App() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  // Auto-refresh the page every 5 minutes to pick up code updates
+  useEffect(() => {
+    const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const intervalId = setInterval(() => {
+      window.location.reload();
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen();
