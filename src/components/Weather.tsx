@@ -43,7 +43,7 @@ export function Weather() {
     const fetchWeather = async () => {
       try {
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=1`
+          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2`
         );
 
         if (!response.ok) throw new Error('Failed to fetch weather');
@@ -51,14 +51,14 @@ export function Weather() {
         const data = await response.json();
         const current = data.current;
 
-        // Get hourly forecast for the rest of today
+        // Get hourly forecast starting from current hour for next 10 hours
         const now = new Date();
-        const currentHour = now.getHours();
+        now.setMinutes(0, 0, 0); // Round down to current hour
 
         const hourlyForecast: HourlyForecast[] = [];
-        for (let i = 0; i < data.hourly.time.length && hourlyForecast.length < 12; i++) {
+        for (let i = 0; i < data.hourly.time.length && hourlyForecast.length < 10; i++) {
           const forecastTime = new Date(data.hourly.time[i]);
-          if (forecastTime.getHours() > currentHour || forecastTime.getDate() > now.getDate()) {
+          if (forecastTime >= now) {
             hourlyForecast.push({
               time: data.hourly.time[i],
               temperature: Math.round(data.hourly.temperature_2m[i]),
@@ -145,28 +145,28 @@ export function Weather() {
       {/* Hourly Forecast */}
       {weather.hourlyForecast.length > 0 && (
         <div className="flex-1 min-h-0">
-          <div className="text-sm text-gray-500 uppercase tracking-wide mb-3">
-            Today's Forecast
+          <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">
+            Next 10 Hours
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {weather.hourlyForecast.slice(0, 8).map((hour, idx) => {
+          <div className="flex justify-between">
+            {weather.hourlyForecast.map((hour, idx) => {
               const hourTime = new Date(hour.time);
               const hourLabel = hourTime.toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 hour12: true
               });
               const hourWeather = weatherDescriptions[hour.weatherCode] || { icon: '❓' };
-              const barHeight = ((hour.temperature - minTemp) / tempRange) * 40 + 20;
+              const barHeight = ((hour.temperature - minTemp) / tempRange) * 32 + 16;
 
               return (
-                <div key={idx} className="flex flex-col items-center min-w-[60px]">
-                  <div className="text-sm text-gray-500 mb-1">{hourLabel}</div>
-                  <div className="text-xl mb-1">{hourWeather.icon}</div>
+                <div key={idx} className="flex flex-col items-center">
+                  <div className="text-xs text-gray-500 mb-1">{hourLabel}</div>
+                  <div className="text-base mb-1">{hourWeather.icon}</div>
                   <div
-                    className="w-8 bg-gradient-to-t from-blue-600 to-orange-400 rounded-t opacity-60 mb-1"
+                    className="w-5 bg-gradient-to-t from-blue-600 to-orange-400 rounded-t opacity-60 mb-1"
                     style={{ height: `${barHeight}px` }}
                   />
-                  <div className="text-lg font-medium text-white">{hour.temperature}°</div>
+                  <div className="text-sm font-medium text-white">{hour.temperature}°</div>
                 </div>
               );
             })}
