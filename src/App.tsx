@@ -35,15 +35,32 @@ function App() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white p-6 no-select flex flex-col overflow-hidden">
-      {/* Compact header with time and weather */}
-      <header className="flex justify-between items-center mb-4 flex-shrink-0">
+      {/* Compact header with clock */}
+      <header className="flex-shrink-0 mb-4">
         <Clock />
-        <Weather />
       </header>
 
-      {/* Main content - Subway Status fills remaining space */}
-      <main className="flex-1 min-h-0">
-        <SubwayStatus />
+      {/* Main content - Two panel layout */}
+      <main className="flex-1 min-h-0 flex gap-6">
+        {/* Subway Panel - Main panel (left, larger) */}
+        <section className="flex-1 bg-gray-800/40 rounded-2xl p-5 flex flex-col min-w-0">
+          <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+            Subway Arrivals
+          </h2>
+          <div className="flex-1 min-h-0">
+            <SubwayStatus />
+          </div>
+        </section>
+
+        {/* Weather Panel - Side panel (right, narrower) */}
+        <section className="w-[380px] flex-shrink-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col">
+          <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+            Weather
+          </h2>
+          <div className="flex-1 min-h-0">
+            <Weather />
+          </div>
+        </section>
       </main>
 
       {/* Fullscreen toggle button - subtle, bottom right */}

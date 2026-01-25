@@ -150,7 +150,7 @@ export function SubwayStatus() {
       </div>
 
       {lastUpdated && (
-        <div className="text-xs text-gray-600 mt-2 flex-shrink-0">
+        <div className="text-xs text-gray-500 mt-3 flex-shrink-0">
           Updated {lastUpdated.toLocaleTimeString()}
         </div>
       )}
