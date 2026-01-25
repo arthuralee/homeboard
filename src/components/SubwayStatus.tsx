@@ -14,12 +14,11 @@ interface StationConfig {
   displayName: string;
 }
 
-// TODO: Configure these station IDs for your location
-// Find station IDs at: https://atisdata.s3.amazonaws.com/Station/Stations.csv
-// Common Manhattan stations as examples:
+// Station IDs from MTA GTFS data
 const STATIONS: StationConfig[] = [
-  { id: '635', name: '14 St-Union Sq', displayName: 'Union Square' }, // 4,5,6,L,N,Q,R,W
-  { id: '631', name: 'Astor Pl', displayName: 'Astor Place' }, // 6
+  { id: '137', name: '28 St', displayName: '28th St' }, // 1,2,3
+  { id: 'R17', name: '28 St', displayName: '28th St' }, // N,R,W
+  { id: 'D17', name: '34 St-Herald Sq', displayName: '34th St-Herald Sq' }, // B,D,F,M,N,Q,R,W
 ];
 
 function formatArrivalTime(arrivalTime: string): string {
