@@ -13,14 +13,14 @@ interface Arrival {
 // MTA GTFS-RT Feed URLs (public, no API key required)
 // See: https://api.mta.info/#/subwayRealTimeFeeds
 const FEED_URLS: Record<string, string> = {
-  'ace': 'https://api.mta.info/nyct/gtfs-ace',
-  'bdfm': 'https://api.mta.info/nyct/gtfs-bdfm',
-  'g': 'https://api.mta.info/nyct/gtfs-g',
-  'jz': 'https://api.mta.info/nyct/gtfs-jz',
-  'nqrw': 'https://api.mta.info/nyct/gtfs-nqrw',
-  'l': 'https://api.mta.info/nyct/gtfs-l',
-  '1234567': 'https://api.mta.info/nyct/gtfs',
-  'si': 'https://api.mta.info/nyct/gtfs-si',
+  'ace': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
+  'bdfm': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
+  'g': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g',
+  'jz': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz',
+  'nqrw': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
+  'l': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l',
+  '1234567': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+  'si': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si',
 };
 
 // Simple GTFS-RT protobuf parsing
