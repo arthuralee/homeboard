@@ -12,26 +12,21 @@ A glanceable at-a-distance dashboard designed for an iPad mounted in landscape m
 
 ## Setup
 
-### 1. Get an MTA API Key
-
-1. Visit [api.mta.info](https://api.mta.info/) and register for an account
-2. Request an API key for the GTFS-RT feeds
-3. You'll need this key for the Cloudflare deployment
-
-### 2. Configure Your Stations
+### 1. Configure Your Stations
 
 Edit `src/components/SubwayStatus.tsx` and update the `STATIONS` array with your nearby stations:
 
 ```typescript
 const STATIONS: StationConfig[] = [
-  { id: '635', name: '14 St-Union Sq', displayName: 'Union Square' },
-  { id: '631', name: 'Astor Pl', displayName: 'Astor Place' },
+  { id: '137', name: '28 St', displayName: '28th St' }, // 1,2,3
+  { id: 'R17', name: '28 St', displayName: '28th St' }, // N,R,W
+  { id: 'D17', name: '34 St-Herald Sq', displayName: '34th St-Herald Sq' }, // B,D,F,M,N,Q,R,W
 ];
 ```
 
-Find station IDs in the [MTA Station data](https://atisdata.s3.amazonaws.com/Station/Stations.csv).
+Station IDs use GTFS format. The MTA API is publicly accessible (no API key required).
 
-### 3. Deploy to Cloudflare Pages
+### 2. Deploy to Cloudflare Pages
 
 #### Option A: Via Cloudflare Dashboard
 1. Push this repo to GitHub
@@ -40,8 +35,7 @@ Find station IDs in the [MTA Station data](https://atisdata.s3.amazonaws.com/Sta
 4. Configure build settings:
    - Build command: `npm run build`
    - Build output directory: `dist`
-5. Add environment variable: `MTA_API_KEY` = your MTA API key
-6. Deploy!
+5. Deploy!
 
 #### Option B: Via Wrangler CLI
 ```bash
@@ -50,7 +44,7 @@ wrangler login
 wrangler pages deploy dist
 ```
 
-### 4. Install on iPad
+### 3. Install on iPad
 
 1. Open the deployed URL in Safari on your iPad
 2. Tap the Share button > "Add to Home Screen"
