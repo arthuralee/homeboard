@@ -1,9 +1,7 @@
 // Cloudflare Pages Function to proxy MTA API requests
-// This handles CORS and keeps the API key secure
+// MTA GTFS-RT feeds are publicly accessible (no API key required)
 
-interface Env {
-  MTA_API_KEY: string;
-}
+interface Env {}
 
 interface Arrival {
   routeId: string;
@@ -12,16 +10,17 @@ interface Arrival {
   stationId: string;
 }
 
-// MTA GTFS-RT Feed URLs
+// MTA GTFS-RT Feed URLs (public, no API key required)
+// See: https://api.mta.info/#/subwayRealTimeFeeds
 const FEED_URLS: Record<string, string> = {
-  'ace': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
-  'bdfm': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
-  'g': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g',
-  'jz': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz',
-  'nqrw': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
-  'l': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l',
-  '1234567': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
-  'si': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si',
+  'ace': 'https://api.mta.info/nyct/gtfs-ace',
+  'bdfm': 'https://api.mta.info/nyct/gtfs-bdfm',
+  'g': 'https://api.mta.info/nyct/gtfs-g',
+  'jz': 'https://api.mta.info/nyct/gtfs-jz',
+  'nqrw': 'https://api.mta.info/nyct/gtfs-nqrw',
+  'l': 'https://api.mta.info/nyct/gtfs-l',
+  '1234567': 'https://api.mta.info/nyct/gtfs',
+  'si': 'https://api.mta.info/nyct/gtfs-si',
 };
 
 // Simple GTFS-RT protobuf parsing
@@ -29,22 +28,9 @@ const FEED_URLS: Record<string, string> = {
 // or parse the protobuf manually
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const { request, env } = context;
+  const { request } = context;
   const url = new URL(request.url);
   const stationIds = url.searchParams.get('stations')?.split(',') || [];
-
-  if (!env.MTA_API_KEY) {
-    return new Response(
-      JSON.stringify({
-        error: 'MTA_API_KEY not configured',
-        arrivals: [],
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
 
   try {
     const arrivals: Arrival[] = [];
@@ -52,11 +38,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // Fetch from all feeds in parallel
     const feedPromises = Object.entries(FEED_URLS).map(async ([feedId, feedUrl]) => {
       try {
-        const response = await fetch(feedUrl, {
-          headers: {
-            'x-api-key': env.MTA_API_KEY,
-          },
-        });
+        const response = await fetch(feedUrl);
 
         if (!response.ok) {
           console.error(`Feed ${feedId} error: ${response.status}`);

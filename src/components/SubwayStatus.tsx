@@ -90,9 +90,6 @@ export function SubwayStatus() {
     return (
       <div className="text-gray-500 text-xl">
         {error}
-        <div className="text-sm text-gray-600 mt-2">
-          Configure MTA_API_KEY in Cloudflare
-        </div>
       </div>
     );
   }
