@@ -34,22 +34,16 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white p-8 no-select">
-      {/* Header with time and weather */}
-      <header className="flex justify-between items-start mb-12">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white p-6 no-select flex flex-col overflow-hidden">
+      {/* Compact header with time and weather */}
+      <header className="flex justify-between items-center mb-4 flex-shrink-0">
         <Clock />
         <Weather />
       </header>
 
-      {/* Main content - Subway Status */}
-      <main className="flex-1">
-        <div className="mb-6">
-          <h2 className="text-3xl font-light text-gray-300 mb-6 flex items-center gap-3">
-            <span className="text-4xl">🚇</span>
-            Subway Arrivals
-          </h2>
-          <SubwayStatus />
-        </div>
+      {/* Main content - Subway Status fills remaining space */}
+      <main className="flex-1 min-h-0">
+        <SubwayStatus />
       </main>
 
       {/* Fullscreen toggle button - subtle, bottom right */}

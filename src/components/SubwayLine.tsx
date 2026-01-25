@@ -44,7 +44,7 @@ export function SubwayLine({ line, size = 'md' }: SubwayLineProps) {
   const sizeClasses = {
     sm: 'w-6 h-6 text-sm',
     md: 'w-10 h-10 text-xl',
-    lg: 'w-14 h-14 text-3xl',
+    lg: 'w-12 h-12 text-2xl',
   };
 
   return (
