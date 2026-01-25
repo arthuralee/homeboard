@@ -42,8 +42,9 @@ export function Weather() {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2`
+          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2&timezone=${encodeURIComponent(timezone)}`
         );
 
         if (!response.ok) throw new Error('Failed to fetch weather');
@@ -142,13 +143,13 @@ export function Weather() {
         </div>
       </div>
 
-      {/* Hourly Forecast */}
+      {/* Hourly Forecast - Vertical Layout */}
       {weather.hourlyForecast.length > 0 && (
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
           <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">
             Next 10 Hours
           </div>
-          <div className="flex justify-between">
+          <div className="flex-1 flex flex-col justify-between">
             {weather.hourlyForecast.map((hour, idx) => {
               const hourTime = new Date(hour.time);
               const hourLabel = hourTime.toLocaleTimeString('en-US', {
@@ -156,15 +157,15 @@ export function Weather() {
                 hour12: true
               });
               const hourWeather = weatherDescriptions[hour.weatherCode] || { icon: '❓' };
-              const barHeight = ((hour.temperature - minTemp) / tempRange) * 32 + 16;
+              const barWidth = ((hour.temperature - minTemp) / tempRange) * 80 + 40;
 
               return (
-                <div key={idx} className="flex flex-col items-center">
-                  <div className="text-xs text-gray-500 mb-1">{hourLabel}</div>
-                  <div className="text-base mb-1">{hourWeather.icon}</div>
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-12 text-sm text-gray-500 text-right">{hourLabel}</div>
+                  <div className="text-base">{hourWeather.icon}</div>
                   <div
-                    className="w-5 bg-gradient-to-t from-blue-600 to-orange-400 rounded-t opacity-60 mb-1"
-                    style={{ height: `${barHeight}px` }}
+                    className="h-4 bg-gradient-to-r from-blue-600 to-orange-400 rounded-r opacity-60"
+                    style={{ width: `${barWidth}px` }}
                   />
                   <div className="text-sm font-medium text-white">{hour.temperature}°</div>
                 </div>
