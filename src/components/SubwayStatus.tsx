@@ -14,6 +14,9 @@ interface StationConfig {
   displayName: string;
 }
 
+// Minimum minutes until arrival to display a train (filters out trains you can't catch)
+const MIN_MINUTES_AWAY = 5;
+
 // Station IDs from MTA GTFS data
 const STATIONS: StationConfig[] = [
   { id: '137', name: '28 St', displayName: '28th St' }, // 1,2,3
@@ -68,8 +71,10 @@ export function SubwayStatus() {
 
   // Group arrivals by station and direction
   const groupedArrivals = STATIONS.map(station => {
+    const now = Date.now();
+    const minTimeMs = now + MIN_MINUTES_AWAY * 60000;
     const stationArrivals = arrivals
-      .filter(a => a.stationId === station.id)
+      .filter(a => a.stationId === station.id && new Date(a.arrivalTime).getTime() >= minTimeMs)
       .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
 
     const uptown = stationArrivals.filter(a => a.direction === 'N').slice(0, 3);
