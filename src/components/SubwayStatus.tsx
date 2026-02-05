@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { SubwayLine } from './SubwayLine';
 
 interface Arrival {
@@ -34,6 +34,35 @@ function formatArrivalTime(arrivalTime: string): string {
   if (diffMins === 0) return 'now';
   if (diffMins === 1) return '1 min';
   return `${diffMins} min`;
+}
+
+function StationName({ name }: { name: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Reset to max size
+    el.style.fontSize = '1.5rem';
+
+    // Shrink until it fits on one line
+    let size = 24;
+    while (el.scrollWidth > el.clientWidth && size > 12) {
+      size -= 1;
+      el.style.fontSize = `${size}px`;
+    }
+  }, [name]);
+
+  return (
+    <h3
+      ref={ref}
+      className="font-semibold text-white mb-2 flex-shrink-0 whitespace-nowrap overflow-hidden"
+      style={{ fontSize: '1.5rem' }}
+    >
+      {name}
+    </h3>
+  );
 }
 
 export function SubwayStatus() {
@@ -77,8 +106,8 @@ export function SubwayStatus() {
       .filter(a => a.stationId === station.id && new Date(a.arrivalTime).getTime() >= minTimeMs)
       .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
 
-    const uptown = stationArrivals.filter(a => a.direction === 'N').slice(0, 3);
-    const downtown = stationArrivals.filter(a => a.direction === 'S').slice(0, 3);
+    const uptown = stationArrivals.filter(a => a.direction === 'N').slice(0, 4);
+    const downtown = stationArrivals.filter(a => a.direction === 'S').slice(0, 4);
 
     return { station, uptown, downtown };
   });
@@ -106,9 +135,7 @@ export function SubwayStatus() {
         {groupedArrivals.map(({ station, uptown, downtown }) => (
           <div key={station.id} className="flex flex-col min-h-0">
             {/* Station name */}
-            <h3 className="text-2xl font-semibold text-white mb-2 flex-shrink-0">
-              {station.displayName}
-            </h3>
+            <StationName name={station.displayName} />
 
             {/* Uptown and Downtown stacked */}
             <div className="flex-1 flex flex-col gap-3 min-h-0">
