@@ -44,7 +44,7 @@ export function Weather() {
       try {
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2&timezone=${encodeURIComponent(timezone)}`
+          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2&timezone=${encodeURIComponent(timezone)}`
         );
 
         if (!response.ok) throw new Error('Failed to fetch weather');
@@ -76,6 +76,7 @@ export function Weather() {
           humidity: current.relative_humidity_2m,
           precipitation: current.precipitation,
           windSpeed: Math.round(current.wind_speed_10m),
+          uvIndex: Math.round(current.uv_index),
           hourlyForecast,
         });
         setError(null);
@@ -140,6 +141,10 @@ export function Weather() {
         <div>
           <span className="text-gray-500">Wind</span>{' '}
           <span className="text-white">{weather.windSpeed} mph</span>
+        </div>
+        <div>
+          <span className="text-gray-500">UV</span>{' '}
+          <span className="text-white">{weather.uvIndex}</span>
         </div>
       </div>
 

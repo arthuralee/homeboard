@@ -19,6 +19,7 @@ export interface WeatherData {
   humidity: number;
   precipitation: number;
   windSpeed: number;
+  uvIndex: number;
   hourlyForecast: HourlyForecast[];
 }
 
