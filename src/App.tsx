@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
 import { SubwayStatus } from './components/SubwayStatus';
+import { Citibike } from './components/Citibike';
 
 function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -52,15 +53,28 @@ function App() {
           </div>
         </section>
 
-        {/* Weather Panel - Side panel (right, narrower) */}
-        <section className="w-[380px] flex-shrink-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col">
-          <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-            Weather
-          </h2>
-          <div className="flex-1 min-h-0">
-            <Weather />
-          </div>
-        </section>
+        {/* Right column - Weather + Citibike stacked */}
+        <div className="w-[380px] flex-shrink-0 flex flex-col gap-4 min-h-0">
+          {/* Weather Panel */}
+          <section className="flex-1 min-h-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col">
+            <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+              Weather
+            </h2>
+            <div className="flex-1 min-h-0">
+              <Weather />
+            </div>
+          </section>
+
+          {/* Citibike Panel */}
+          <section className="flex-shrink-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col h-48">
+            <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+              Citibike
+            </h2>
+            <div className="flex-1 min-h-0">
+              <Citibike />
+            </div>
+          </section>
+        </div>
       </main>
 
       {/* Fullscreen toggle button - subtle, bottom right */}
