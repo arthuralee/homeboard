@@ -37,3 +37,17 @@ export interface SubwayFeedResponse {
     stationId: string;
   }[];
 }
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  location: string | null;
+  start: string;
+  end: string;
+  allDay: boolean;
+}
+
+export interface CalendarFeedResponse {
+  events: CalendarEvent[];
+  error?: string;
+}
