@@ -3,9 +3,15 @@ import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
 import { SubwayStatus } from './components/SubwayStatus';
 import { Citibike } from './components/Citibike';
+import { CommuteCard } from './components/CommuteCard';
+import { useCalendar } from './hooks/useCalendar';
 
 function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { events: calendarEvents } = useCalendar();
+  // Events from the hook are already filtered to the lookahead window and
+  // sorted ascending, so the first one with a location is the next commute.
+  const nextCommute = calendarEvents.find((e) => e.location.trim().length > 0);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -43,14 +49,23 @@ function App() {
 
       {/* Main content - Two panel layout */}
       <main className="flex-1 min-h-0 flex gap-6">
-        {/* Subway Panel - Main panel (left, larger) */}
+        {/* Main panel (left, larger): commute card when there's an upcoming event,
+            otherwise the full subway grid. */}
         <section className="flex-1 bg-gray-800/40 rounded-2xl p-5 flex flex-col min-w-0">
-          <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-            Subway Arrivals
-          </h2>
-          <div className="flex-1 min-h-0">
-            <SubwayStatus />
-          </div>
+          {nextCommute ? (
+            <div className="flex-1 min-h-0">
+              <CommuteCard event={nextCommute} />
+            </div>
+          ) : (
+            <>
+              <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+                Subway Arrivals
+              </h2>
+              <div className="flex-1 min-h-0">
+                <SubwayStatus />
+              </div>
+            </>
+          )}
         </section>
 
         {/* Right column - Weather + Citibike stacked */}
