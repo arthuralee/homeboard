@@ -71,6 +71,7 @@ export function useCalendar(): UseCalendarResult {
   useEffect(() => {
     const url = import.meta.env.ARTHUR_GCAL_LINK;
     if (!url) {
+      console.warn('ARTHUR_GCAL_LINK is not set — commute card disabled');
       setError('ARTHUR_GCAL_LINK not set');
       setLoading(false);
       return;
