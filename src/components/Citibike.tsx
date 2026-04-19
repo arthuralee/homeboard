@@ -8,7 +8,6 @@ const STATUS_URL = 'https://gbfs.citibikenyc.com/gbfs/en/station_status.json';
 
 interface StationInfo {
   station_id: string;
-  name: string;
   short_name: string;
 }
 
@@ -23,7 +22,6 @@ interface StationStatus {
 }
 
 interface Availability {
-  name: string;
   bikes: number;
   ebikes: number;
   lastReported: Date;
@@ -48,7 +46,6 @@ export function Citibike() {
         if (!station) throw new Error(`Station ${STATION_SHORT_NAME} not found`);
 
         const stationId = station.station_id;
-        const stationName = station.name;
 
         const fetchStatus = async () => {
           try {
@@ -61,7 +58,6 @@ export function Citibike() {
             if (!status) throw new Error('Station status missing');
             if (cancelled) return;
             setData({
-              name: stationName,
               bikes: status.num_bikes_available ?? 0,
               ebikes: status.num_ebikes_available ?? 0,
               lastReported: new Date(status.last_reported * 1000),
@@ -99,9 +95,6 @@ export function Citibike() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-sm text-gray-400 mb-3 truncate" title={data.name}>
-        {data.name}
-      </div>
       <div className="flex-1 flex items-center justify-around gap-4">
         <div className="flex flex-col items-center">
           <div className="text-4xl" aria-hidden>🚲</div>

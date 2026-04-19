@@ -68,7 +68,7 @@ function App() {
           {/* Citibike Panel */}
           <section className="flex-shrink-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col h-48">
             <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-              Citibike
+              Citibike — Broadway & W 29th
             </h2>
             <div className="flex-1 min-h-0">
               <Citibike />
