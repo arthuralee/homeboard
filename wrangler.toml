@@ -3,7 +3,6 @@ name = "homeboard"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 
-# Env vars declared here are exposed both at build time (read by vite.config.ts
-# and inlined via `define`) and at runtime to Pages Functions via context.env.
-[vars]
-# ARTHUR_GCAL_LINK = "https://calendar.google.com/calendar/ical/.../basic.ics"
+# Environment variables (set these in Cloudflare Dashboard)
+# ARTHUR_GCAL_LINK: Google Calendar iCal URL, set as a secret in the CF Pages
+# dashboard. Read at runtime by functions/api/calendar.ts via context.env.

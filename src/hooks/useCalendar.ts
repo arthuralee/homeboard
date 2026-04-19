@@ -69,19 +69,11 @@ export function useCalendar(): UseCalendarResult {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
-    const url = import.meta.env.ARTHUR_GCAL_LINK;
-    if (!url) {
-      console.warn('ARTHUR_GCAL_LINK is not set — commute card disabled');
-      setError('ARTHUR_GCAL_LINK not set');
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     const fetchCalendar = async () => {
       try {
-        const res = await fetch(url);
+        const res = await fetch('/api/calendar');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         const now = new Date();
