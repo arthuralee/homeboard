@@ -223,10 +223,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     travelMode: 'TRANSIT',
     arrivalTime: arriveByDate.toISOString(),
     computeAlternativeRoutes: true,
-    // No allowedTravelModes restriction — we filter client-side for routes
-    // whose first transit step is SUBWAY. Restricting to SUBWAY at the Google
-    // layer causes short trips to return zero routes.
-    transitPreferences: {},
+    transitPreferences: {
+      allowedTravelModes: ['SUBWAY', 'TRAIN'],
+    },
   };
   const driveBody = {
     origin,
