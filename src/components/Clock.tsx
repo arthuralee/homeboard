@@ -1,12 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useNow } from '../hooks/useNow';
 
 export function Clock() {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const time = useNow(1000);
 
   const timeString = time.toLocaleTimeString('en-US', {
     hour: 'numeric',
