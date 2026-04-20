@@ -169,12 +169,11 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
   // ViewBox coordinate system — we let CSS scale the SVG to fit the container.
   const vbWidth = 340;
   const iconRow = 22;
-  const chartTop = 32;
   const chartBottom = 110;
   const axisRow = 128;
   const vbHeight = 140;
   const padX = 16;
-  const chartHeight = chartBottom - chartTop;
+  const chartHeight = 78;
   // Leave headroom above the max so H/L labels don't clip the curve visually.
   const yPad = 10;
 
@@ -185,7 +184,6 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
     return { x, y, temp: h.temperature, time: h.time };
   });
 
-  // Smooth Catmull-Rom-ish path using cubic beziers with simple tangent estimates.
   const linePath = buildSmoothPath(points);
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
 
@@ -209,7 +207,6 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         </linearGradient>
       </defs>
 
-      {/* Weather icons across the top */}
       {points.map((p, i) => {
         const icon = weatherDescriptions[hours[i].weatherCode]?.icon ?? '❓';
         return (
@@ -225,10 +222,8 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         );
       })}
 
-      {/* Area fill */}
       <path d={areaPath} fill={`url(#${fillId})`} />
 
-      {/* Line */}
       <path
         d={linePath}
         fill="none"
@@ -238,51 +233,11 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         strokeLinejoin="round"
       />
 
-      {/* High marker */}
-      <circle
-        cx={points[maxIdx].x}
-        cy={points[maxIdx].y}
-        r="4"
-        fill="#0f172a"
-        stroke="#67e8f9"
-        strokeWidth="2"
-      />
-      <text
-        x={points[maxIdx].x}
-        y={points[maxIdx].y - 10}
-        textAnchor="middle"
-        fontSize="11"
-        fill="#e5e7eb"
-        fontWeight="600"
-      >
-        H {points[maxIdx].temp}°
-      </text>
-
-      {/* Low marker (only if distinct from high) */}
+      <TempMarker point={points[maxIdx]} label="H" stroke="#67e8f9" above />
       {minIdx !== maxIdx && (
-        <>
-          <circle
-            cx={points[minIdx].x}
-            cy={points[minIdx].y}
-            r="4"
-            fill="#0f172a"
-            stroke="#60a5fa"
-            strokeWidth="2"
-          />
-          <text
-            x={points[minIdx].x}
-            y={points[minIdx].y + 16}
-            textAnchor="middle"
-            fontSize="11"
-            fill="#e5e7eb"
-            fontWeight="600"
-          >
-            L {points[minIdx].temp}°
-          </text>
-        </>
+        <TempMarker point={points[minIdx]} label="L" stroke="#60a5fa" />
       )}
 
-      {/* Time axis — label first, middle, last for readability */}
       {axisTicks(hours.length).map((i) => (
         <text
           key={`tick-${i}`}
@@ -296,6 +251,34 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         </text>
       ))}
     </svg>
+  );
+}
+
+function TempMarker({
+  point,
+  label,
+  stroke,
+  above,
+}: {
+  point: { x: number; y: number; temp: number };
+  label: string;
+  stroke: string;
+  above?: boolean;
+}) {
+  return (
+    <>
+      <circle cx={point.x} cy={point.y} r="4" fill="#0f172a" stroke={stroke} strokeWidth="2" />
+      <text
+        x={point.x}
+        y={point.y + (above ? -10 : 16)}
+        textAnchor="middle"
+        fontSize="11"
+        fill="#e5e7eb"
+        fontWeight="600"
+      >
+        {label} {point.temp}°
+      </text>
+    </>
   );
 }
 
