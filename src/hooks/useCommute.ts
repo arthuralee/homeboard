@@ -7,11 +7,13 @@ import {
   COMMUTE_MAX_HOURS_AHEAD,
 } from '../config/commute';
 
-// Cache Directions responses in localStorage so page reloads (and the 5-min
-// auto-refresh in App.tsx) don't re-hit the Function. TTL matches the edge
-// cache on /api/commute.
+// Bump to bust both the Cloudflare edge cache (passed as ?v= on the fetch)
+// and the localStorage cache (embedded in the cache key) whenever the
+// request/response shape changes.
+const COMMUTE_CACHE_VERSION = 1;
+
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const CACHE_KEY_PREFIX = 'commute:v2:';
+const CACHE_KEY_PREFIX = `commute:v${COMMUTE_CACHE_VERSION}:`;
 
 interface CachedEntry {
   expiresAt: number;
@@ -199,7 +201,7 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
 
     const run = async () => {
       try {
-        const params = new URLSearchParams({ to, arriveBy });
+        const params = new URLSearchParams({ to, arriveBy, v: String(COMMUTE_CACHE_VERSION) });
         const res = await fetch(`/api/commute?${params.toString()}`);
         if (!res.ok) {
           const body = await res.text();
