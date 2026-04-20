@@ -22,7 +22,10 @@ export const COMMUTE_TRAVEL_MINUTES = 30;
 export const COMMUTE_BUFFER_MINUTES = 10;
 
 // Only surface events starting within this many hours from now.
-export const COMMUTE_LOOKAHEAD_HOURS = 14;
+export const COMMUTE_LOOKAHEAD_HOURS = 168; // 1 week (we show the next event regardless)
+// Only compute transport options for events within this window; anything
+// further out shows as "on Thursday at 7 PM" with no route lookups.
+export const COMMUTE_MAX_HOURS_AHEAD = 12;
 export const CALENDAR_REFRESH_MS = 5 * 60 * 1000;
 
 // Map from (Google departure-station name, line short_name) to MTA GTFS

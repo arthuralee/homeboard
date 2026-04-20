@@ -1,13 +1,14 @@
-// Google Routes API proxy. Given an event location + arrival time, returns
-// the first subway transit step plus overall duration. Keeps the API key and
-// home origin server-side as CF Pages secrets.
+// Google Routes API proxy. Fires three parallel requests (WALK, TRANSIT with
+// subway-only alternatives, DRIVE with traffic) and returns a unified response
+// with all viable options. Client sorts + renders. API key + home origin stay
+// as CF Pages secrets.
 
 interface Env {
   GOOGLE_MAPS_KEY: string;
   HOME_ORIGIN: string;
 }
 
-interface CommuteStep {
+interface TransitStep {
   station: string;
   arrivalStation: string;
   line: string;
@@ -16,43 +17,167 @@ interface CommuteStep {
   arrivalTime: string;
 }
 
-interface CommuteResponse {
+interface TransitOption {
   totalMinutes: number;
   departureTime: string;
   arrivalTime: string;
-  firstTransit: CommuteStep | null;
+  walkToStationMinutes: number;
+  transferCount: number;
+  transit: TransitStep;
+}
+
+interface SimpleOption {
+  totalMinutes: number;
+  departureTime: string;
+  arrivalTime: string;
+}
+
+interface CommuteResponse {
+  walk: SimpleOption | null;
+  transit: TransitOption[];
+  drive: SimpleOption | null;
+  errors: { walk?: string; transit?: string; drive?: string };
+}
+
+interface Route {
+  duration?: string;
+  legs?: Array<{
+    steps?: Array<{
+      travelMode?: string;
+      duration?: string;
+      transitDetails?: {
+        stopDetails?: {
+          arrivalStop?: { name?: string };
+          departureStop?: { name?: string };
+          arrivalTime?: string;
+          departureTime?: string;
+        };
+        headsign?: string;
+        transitLine?: {
+          nameShort?: string;
+          name?: string;
+          vehicle?: { type?: string };
+        };
+      };
+    }>;
+  }>;
 }
 
 interface RoutesApiResponse {
   error?: { code: number; message: string; status: string };
-  routes?: Array<{
-    duration?: string; // e.g. "1234s"
-    legs?: Array<{
-      steps?: Array<{
-        travelMode?: string;
-        transitDetails?: {
-          stopDetails?: {
-            arrivalStop?: { name?: string };
-            departureStop?: { name?: string };
-            arrivalTime?: string;
-            departureTime?: string;
-          };
-          headsign?: string;
-          transitLine?: {
-            nameShort?: string;
-            name?: string;
-            vehicle?: { type?: string };
-          };
-        };
-      }>;
-    }>;
-  }>;
+  routes?: Route[];
 }
+
+const MAX_TRANSIT_OPTIONS = 3;
+// When asking for DRIVE traffic at a future arrival time, we need a
+// departureTime. Use a rough estimate; the returned duration is what drives
+// the UI's leave-by anyway.
+const DRIVE_DEPARTURE_HEURISTIC_MS = 30 * 60 * 1000;
 
 function parseDurationSeconds(duration: string | undefined): number {
   if (!duration) return 0;
   const match = duration.match(/^(\d+)s$/);
   return match ? parseInt(match[1], 10) : 0;
+}
+
+async function callRoutes(
+  apiKey: string,
+  body: Record<string, unknown>,
+  fieldMask: string,
+): Promise<RoutesApiResponse | { _error: string }> {
+  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': apiKey,
+      'x-goog-fieldmask': fieldMask,
+    },
+    body: JSON.stringify(body),
+    cf: { cacheTtl: 300, cacheEverything: true },
+  });
+  if (!res.ok) {
+    return { _error: `upstream ${res.status}: ${(await res.text()).slice(0, 200)}` };
+  }
+  const data = (await res.json()) as RoutesApiResponse;
+  if (data.error) {
+    return { _error: `${data.error.status}: ${data.error.message}` };
+  }
+  return data;
+}
+
+function extractSimple(data: RoutesApiResponse, arriveByDate: Date): SimpleOption | null {
+  const duration = parseDurationSeconds(data.routes?.[0]?.duration);
+  if (!duration) return null;
+  return {
+    totalMinutes: Math.round(duration / 60),
+    departureTime: new Date(arriveByDate.getTime() - duration * 1000).toISOString(),
+    arrivalTime: arriveByDate.toISOString(),
+  };
+}
+
+function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): TransitOption[] {
+  const raw: TransitOption[] = [];
+
+  for (const route of data.routes ?? []) {
+    const totalSeconds = parseDurationSeconds(route.duration);
+    const steps = route.legs?.[0]?.steps ?? [];
+
+    // Find the first transit step (subway specifically).
+    const firstTransitIdx = steps.findIndex(
+      (s) =>
+        s.travelMode === 'TRANSIT' &&
+        s.transitDetails?.transitLine?.vehicle?.type === 'SUBWAY',
+    );
+    if (firstTransitIdx === -1) continue;
+
+    const boardingStep = steps[firstTransitIdx];
+    const td = boardingStep.transitDetails;
+    if (!td) continue;
+
+    // Sum WALK steps preceding the first subway step.
+    const walkToStationSeconds = steps
+      .slice(0, firstTransitIdx)
+      .filter((s) => s.travelMode === 'WALK')
+      .reduce((acc, s) => acc + parseDurationSeconds(s.duration), 0);
+
+    // Transfers = number of TRANSIT steps minus 1 (counting any vehicle).
+    const transitStepCount = steps.filter((s) => s.travelMode === 'TRANSIT').length;
+    const transferCount = Math.max(0, transitStepCount - 1);
+
+    raw.push({
+      totalMinutes: Math.round(totalSeconds / 60),
+      departureTime: new Date(arriveByDate.getTime() - totalSeconds * 1000).toISOString(),
+      arrivalTime: arriveByDate.toISOString(),
+      walkToStationMinutes: Math.round(walkToStationSeconds / 60),
+      transferCount,
+      transit: {
+        station: td.stopDetails?.departureStop?.name ?? '',
+        arrivalStation: td.stopDetails?.arrivalStop?.name ?? '',
+        line: td.transitLine?.nameShort ?? '',
+        headsign: td.headsign ?? '',
+        departureTime: td.stopDetails?.departureTime ?? '',
+        arrivalTime: td.stopDetails?.arrivalTime ?? '',
+      },
+    });
+  }
+
+  // De-dup by (station, line, headsign); keep fastest, tiebreak by fewer transfers.
+  const bySig = new Map<string, TransitOption>();
+  for (const opt of raw) {
+    const sig = `${opt.transit.station}|${opt.transit.line}|${opt.transit.headsign}`;
+    const existing = bySig.get(sig);
+    if (
+      !existing ||
+      opt.totalMinutes < existing.totalMinutes ||
+      (opt.totalMinutes === existing.totalMinutes && opt.transferCount < existing.transferCount)
+    ) {
+      bySig.set(sig, opt);
+    }
+  }
+
+  return Array.from(bySig.values())
+    .sort((a, b) => a.totalMinutes - b.totalMinutes || a.transferCount - b.transferCount)
+    .slice(0, MAX_TRANSIT_OPTIONS);
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -76,77 +201,60 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return new Response('invalid arriveBy', { status: 400 });
   }
 
-  const body = {
-    origin: { address: env.HOME_ORIGIN },
-    destination: { address: to },
+  const origin = { address: env.HOME_ORIGIN };
+  const destination = { address: to };
+
+  // Drive needs a future departureTime (arrivalTime is transit-only). Use a
+  // heuristic offset, clamped to strictly-future to avoid Routes API rejecting
+  // past timestamps.
+  const driveDepartureMs = Math.max(
+    arriveByDate.getTime() - DRIVE_DEPARTURE_HEURISTIC_MS,
+    Date.now() + 60_000,
+  );
+
+  const walkBody = {
+    origin,
+    destination,
+    travelMode: 'WALK',
+  };
+  const transitBody = {
+    origin,
+    destination,
     travelMode: 'TRANSIT',
     arrivalTime: arriveByDate.toISOString(),
+    computeAlternativeRoutes: true,
     transitPreferences: {
-      allowedTravelModes: ['SUBWAY', 'TRAIN', 'BUS'],
+      allowedTravelModes: ['SUBWAY'],
     },
   };
-
-  const upstream = await fetch(
-    'https://routes.googleapis.com/directions/v2:computeRoutes',
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-goog-api-key': env.GOOGLE_MAPS_KEY,
-        'x-goog-fieldmask':
-          'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails',
-      },
-      body: JSON.stringify(body),
-      cf: { cacheTtl: 300, cacheEverything: true },
-    },
-  );
-
-  if (!upstream.ok) {
-    const errBody = await upstream.text();
-    return new Response(
-      `routes upstream ${upstream.status} ${errBody.slice(0, 300)}`,
-      { status: 502 },
-    );
-  }
-
-  const data = (await upstream.json()) as RoutesApiResponse;
-  if (data.error) {
-    return new Response(
-      `routes error ${data.error.status}: ${data.error.message}`,
-      { status: 502 },
-    );
-  }
-
-  const route = data.routes?.[0];
-  if (!route) {
-    return new Response('no route found', { status: 502 });
-  }
-
-  const totalSeconds = parseDurationSeconds(route.duration);
-  const departureTime = new Date(arriveByDate.getTime() - totalSeconds * 1000);
-
-  const steps = route.legs?.[0]?.steps ?? [];
-  const subwayStep = steps.find(
-    (s) => s.travelMode === 'TRANSIT' && s.transitDetails?.transitLine?.vehicle?.type === 'SUBWAY',
-  );
-
-  const response: CommuteResponse = {
-    totalMinutes: Math.round(totalSeconds / 60),
-    departureTime: departureTime.toISOString(),
-    arrivalTime: arriveByDate.toISOString(),
-    firstTransit: subwayStep?.transitDetails
-      ? {
-          station: subwayStep.transitDetails.stopDetails?.departureStop?.name ?? '',
-          arrivalStation: subwayStep.transitDetails.stopDetails?.arrivalStop?.name ?? '',
-          line: subwayStep.transitDetails.transitLine?.nameShort ?? '',
-          headsign: subwayStep.transitDetails.headsign ?? '',
-          departureTime: subwayStep.transitDetails.stopDetails?.departureTime ?? '',
-          arrivalTime: subwayStep.transitDetails.stopDetails?.arrivalTime ?? '',
-        }
-      : null,
+  const driveBody = {
+    origin,
+    destination,
+    travelMode: 'DRIVE',
+    routingPreference: 'TRAFFIC_AWARE',
+    departureTime: new Date(driveDepartureMs).toISOString(),
   };
 
-  return new Response(JSON.stringify(response), {
+  const [walkRes, transitRes, driveRes] = await Promise.all([
+    callRoutes(env.GOOGLE_MAPS_KEY, walkBody, 'routes.duration'),
+    callRoutes(
+      env.GOOGLE_MAPS_KEY,
+      transitBody,
+      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.duration,routes.legs.steps.transitDetails',
+    ),
+    callRoutes(env.GOOGLE_MAPS_KEY, driveBody, 'routes.duration'),
+  ]);
+
+  const errors: CommuteResponse['errors'] = {};
+  const walk = '_error' in walkRes ? null : extractSimple(walkRes, arriveByDate);
+  const drive = '_error' in driveRes ? null : extractSimple(driveRes, arriveByDate);
+  const transit = '_error' in transitRes ? [] : extractTransitOptions(transitRes, arriveByDate);
+  if ('_error' in walkRes) errors.walk = walkRes._error;
+  if ('_error' in transitRes) errors.transit = transitRes._error;
+  if ('_error' in driveRes) errors.drive = driveRes._error;
+
+  const responseBody: CommuteResponse = { walk, transit, drive, errors };
+  return new Response(JSON.stringify(responseBody), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'public, max-age=300',
