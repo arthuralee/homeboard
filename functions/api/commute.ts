@@ -150,14 +150,7 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       .filter((s) => s.travelMode === 'WALK')
       .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
 
-    // Sum WALK steps after the last transit step (covers both subway + train).
-    let lastTransitIdx = -1;
-    for (let i = steps.length - 1; i >= 0; i--) {
-      if (steps[i].travelMode === 'TRANSIT') {
-        lastTransitIdx = i;
-        break;
-      }
-    }
+    const lastTransitIdx = steps.findLastIndex((s) => s.travelMode === 'TRANSIT');
     const walkFromStationSeconds = steps
       .slice(lastTransitIdx + 1)
       .filter((s) => s.travelMode === 'WALK')

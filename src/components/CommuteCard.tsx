@@ -136,6 +136,15 @@ function SimpleOptionBlock({
   );
 }
 
+function WalkDuration({ minutes }: { minutes: number }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span aria-hidden>🚶</span>
+      <span>{minutes}m</span>
+    </span>
+  );
+}
+
 function TransitBlock({
   option,
   arrivals,
@@ -178,17 +187,11 @@ function TransitBlock({
         </div>
       </div>
       <div className="mt-2 flex items-center gap-2 text-base text-gray-200 flex-wrap">
-        <span className="flex items-center gap-1">
-          <span aria-hidden>🚶</span>
-          <span>{option.walkToStationMinutes}m</span>
-        </span>
+        <WalkDuration minutes={option.walkToStationMinutes} />
         <span className="text-gray-500" aria-hidden>›</span>
         <SubwayLine line={option.transit.line} size="sm" />
         <span className="text-gray-500" aria-hidden>›</span>
-        <span className="flex items-center gap-1">
-          <span aria-hidden>🚶</span>
-          <span>{option.walkFromStationMinutes}m</span>
-        </span>
+        <WalkDuration minutes={option.walkFromStationMinutes} />
         <span className="text-sm text-gray-500 ml-1">· {summaryBits.join(' · ')}</span>
       </div>
       <div className="mt-1 text-base text-gray-200">
