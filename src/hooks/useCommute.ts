@@ -167,7 +167,6 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
 
   const to = event?.location ?? '';
   const arriveBy = event?.start.toISOString() ?? '';
-  const hoursUntil = event ? (event.start.getTime() - Date.now()) / 3_600_000 : Infinity;
 
   useEffect(() => {
     if (!to || !arriveBy) {
@@ -177,6 +176,7 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
       return;
     }
 
+    const hoursUntil = (new Date(arriveBy).getTime() - Date.now()) / 3_600_000;
     if (hoursUntil > COMMUTE_MAX_HOURS_AHEAD) {
       setOptions([]);
       setFarAway(true);
@@ -224,10 +224,6 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
     return () => {
       cancelled = true;
     };
-    // hoursUntil is intentionally excluded from the deps because the precise
-    // minute changes every render; the 12h window is evaluated once per event
-    // and the 5-min app-wide reload picks up any drift.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [to, arriveBy]);
 
   return { options, farAway, loading, error };
