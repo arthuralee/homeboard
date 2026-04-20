@@ -1,6 +1,6 @@
-// Google Directions API proxy. Given an event location + arrival time,
-// returns the first subway transit step plus overall duration. Keeps the
-// API key and home origin server-side as CF Pages secrets.
+// Google Routes API proxy. Given an event location + arrival time, returns
+// the first subway transit step plus overall duration. Keeps the API key and
+// home origin server-side as CF Pages secrets.
 
 interface Env {
   GOOGLE_MAPS_KEY: string;
@@ -23,6 +23,38 @@ interface CommuteResponse {
   firstTransit: CommuteStep | null;
 }
 
+interface RoutesApiResponse {
+  error?: { code: number; message: string; status: string };
+  routes?: Array<{
+    duration?: string; // e.g. "1234s"
+    legs?: Array<{
+      steps?: Array<{
+        travelMode?: string;
+        transitDetails?: {
+          stopDetails?: {
+            arrivalStop?: { name?: string };
+            departureStop?: { name?: string };
+            arrivalTime?: string;
+            departureTime?: string;
+          };
+          headsign?: string;
+          transitLine?: {
+            nameShort?: string;
+            name?: string;
+            vehicle?: { type?: string };
+          };
+        };
+      }>;
+    }>;
+  }>;
+}
+
+function parseDurationSeconds(duration: string | undefined): number {
+  if (!duration) return 0;
+  const match = duration.match(/^(\d+)s$/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -39,93 +71,79 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return new Response('HOME_ORIGIN not configured', { status: 500 });
   }
 
-  const arrivalUnix = Math.floor(new Date(arriveBy).getTime() / 1000);
-  if (!Number.isFinite(arrivalUnix)) {
+  const arriveByDate = new Date(arriveBy);
+  if (Number.isNaN(arriveByDate.getTime())) {
     return new Response('invalid arriveBy', { status: 400 });
   }
 
-  const directionsUrl = new URL('https://maps.googleapis.com/maps/api/directions/json');
-  directionsUrl.searchParams.set('origin', env.HOME_ORIGIN);
-  directionsUrl.searchParams.set('destination', to);
-  directionsUrl.searchParams.set('mode', 'transit');
-  directionsUrl.searchParams.set('transit_mode', 'subway|train|bus');
-  directionsUrl.searchParams.set('arrival_time', String(arrivalUnix));
-  directionsUrl.searchParams.set('key', env.GOOGLE_MAPS_KEY);
-
-  // Cache by destination + arriveBy rounded to 5min so identical lookups don't
-  // re-bill the Directions API.
-  const upstream = await fetch(directionsUrl.toString(), {
-    cf: { cacheTtl: 300, cacheEverything: true },
-  });
-
-  if (!upstream.ok) {
-    return new Response(`directions upstream ${upstream.status}`, { status: 502 });
-  }
-
-  const data = (await upstream.json()) as {
-    status: string;
-    error_message?: string;
-    routes?: Array<{
-      legs?: Array<{
-        duration?: { value: number };
-        departure_time?: { value: number; text: string };
-        arrival_time?: { value: number; text: string };
-        steps?: Array<{
-          travel_mode: string;
-          transit_details?: {
-            line?: { short_name?: string; name?: string; vehicle?: { type?: string } };
-            headsign?: string;
-            departure_stop?: { name?: string };
-            arrival_stop?: { name?: string };
-            departure_time?: { value: number; text: string };
-            arrival_time?: { value: number; text: string };
-          };
-        }>;
-      }>;
-    }>;
+  const body = {
+    origin: { address: env.HOME_ORIGIN },
+    destination: { address: to },
+    travelMode: 'TRANSIT',
+    arrivalTime: arriveByDate.toISOString(),
+    transitPreferences: {
+      allowedTravelModes: ['SUBWAY', 'TRAIN', 'BUS'],
+    },
   };
 
-  if (data.status !== 'OK') {
+  const upstream = await fetch(
+    'https://routes.googleapis.com/directions/v2:computeRoutes',
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-goog-api-key': env.GOOGLE_MAPS_KEY,
+        'x-goog-fieldmask':
+          'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails',
+      },
+      body: JSON.stringify(body),
+      cf: { cacheTtl: 300, cacheEverything: true },
+    },
+  );
+
+  if (!upstream.ok) {
+    const errBody = await upstream.text();
     return new Response(
-      `directions status=${data.status}${data.error_message ? ' ' + data.error_message : ''}`,
+      `routes upstream ${upstream.status} ${errBody.slice(0, 300)}`,
       { status: 502 },
     );
   }
 
-  const leg = data.routes?.[0]?.legs?.[0];
-  if (!leg) {
+  const data = (await upstream.json()) as RoutesApiResponse;
+  if (data.error) {
+    return new Response(
+      `routes error ${data.error.status}: ${data.error.message}`,
+      { status: 502 },
+    );
+  }
+
+  const route = data.routes?.[0];
+  if (!route) {
     return new Response('no route found', { status: 502 });
   }
 
-  const subwayStep = leg.steps?.find(
-    (s) =>
-      s.travel_mode === 'TRANSIT' &&
-      s.transit_details?.line?.vehicle?.type === 'SUBWAY',
+  const totalSeconds = parseDurationSeconds(route.duration);
+  const departureTime = new Date(arriveByDate.getTime() - totalSeconds * 1000);
+
+  const steps = route.legs?.[0]?.steps ?? [];
+  const subwayStep = steps.find(
+    (s) => s.travelMode === 'TRANSIT' && s.transitDetails?.transitLine?.vehicle?.type === 'SUBWAY',
   );
 
   const response: CommuteResponse = {
-    totalMinutes: Math.round((leg.duration?.value ?? 0) / 60),
-    departureTime: leg.departure_time
-      ? new Date(leg.departure_time.value * 1000).toISOString()
-      : '',
-    arrivalTime: leg.arrival_time
-      ? new Date(leg.arrival_time.value * 1000).toISOString()
-      : '',
-    firstTransit:
-      subwayStep?.transit_details
-        ? {
-            station: subwayStep.transit_details.departure_stop?.name ?? '',
-            arrivalStation: subwayStep.transit_details.arrival_stop?.name ?? '',
-            line: subwayStep.transit_details.line?.short_name ?? '',
-            headsign: subwayStep.transit_details.headsign ?? '',
-            departureTime: subwayStep.transit_details.departure_time
-              ? new Date(subwayStep.transit_details.departure_time.value * 1000).toISOString()
-              : '',
-            arrivalTime: subwayStep.transit_details.arrival_time
-              ? new Date(subwayStep.transit_details.arrival_time.value * 1000).toISOString()
-              : '',
-          }
-        : null,
+    totalMinutes: Math.round(totalSeconds / 60),
+    departureTime: departureTime.toISOString(),
+    arrivalTime: arriveByDate.toISOString(),
+    firstTransit: subwayStep?.transitDetails
+      ? {
+          station: subwayStep.transitDetails.stopDetails?.departureStop?.name ?? '',
+          arrivalStation: subwayStep.transitDetails.stopDetails?.arrivalStop?.name ?? '',
+          line: subwayStep.transitDetails.transitLine?.nameShort ?? '',
+          headsign: subwayStep.transitDetails.headsign ?? '',
+          departureTime: subwayStep.transitDetails.stopDetails?.departureTime ?? '',
+          arrivalTime: subwayStep.transitDetails.stopDetails?.arrivalTime ?? '',
+        }
+      : null,
   };
 
   return new Response(JSON.stringify(response), {
