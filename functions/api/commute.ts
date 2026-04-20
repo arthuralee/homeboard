@@ -96,7 +96,7 @@ async function callRoutes(
     cf: { cacheTtl: 300, cacheEverything: true },
   });
   if (!res.ok) {
-    return { _error: `upstream ${res.status}: ${(await res.text()).slice(0, 200)}` };
+    return { _error: `upstream ${res.status}: ${(await res.text()).slice(0, 1500)}` };
   }
   const data = (await res.json()) as RoutesApiResponse;
   if (data.error) {
