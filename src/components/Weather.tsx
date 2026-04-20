@@ -109,12 +109,6 @@ export function Weather() {
 
   const weatherInfo = weatherDescriptions[weather.weatherCode] || { label: 'Unknown', icon: '❓' };
 
-  // Calculate temperature range for the forecast
-  const temps = weather.hourlyForecast.map(h => h.temperature);
-  const minTemp = Math.min(...temps, weather.temperature);
-  const maxTemp = Math.max(...temps, weather.temperature);
-  const tempRange = maxTemp - minTemp || 1;
-
   return (
     <div className="h-full flex flex-col">
       {/* Current Weather - Main Display */}
@@ -148,37 +142,179 @@ export function Weather() {
         </div>
       </div>
 
-      {/* Hourly Forecast - Vertical Layout */}
-      {weather.hourlyForecast.length > 0 && (
+      {/* Hourly Forecast - Line Chart */}
+      {weather.hourlyForecast.length > 1 && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">
-            Next 10 Hours
+            Next {weather.hourlyForecast.length} Hours
           </div>
-          <div className="flex-1 flex flex-col justify-between">
-            {weather.hourlyForecast.map((hour, idx) => {
-              const hourTime = new Date(hour.time);
-              const hourLabel = hourTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                hour12: true
-              });
-              const hourWeather = weatherDescriptions[hour.weatherCode] || { icon: '❓' };
-              const barWidth = ((hour.temperature - minTemp) / tempRange) * 80 + 40;
-
-              return (
-                <div key={idx} className="flex items-center gap-2">
-                  <div className="w-12 text-sm text-gray-500 text-right">{hourLabel}</div>
-                  <div className="text-base">{hourWeather.icon}</div>
-                  <div
-                    className="h-4 bg-gradient-to-r from-blue-600 to-orange-400 rounded-r opacity-60"
-                    style={{ width: `${barWidth}px` }}
-                  />
-                  <div className="text-sm font-medium text-white">{hour.temperature}°</div>
-                </div>
-              );
-            })}
+          <div className="flex-1 min-h-0">
+            <HourlyLineChart hours={weather.hourlyForecast} />
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
+  const temps = hours.map((h) => h.temperature);
+  const minTemp = Math.min(...temps);
+  const maxTemp = Math.max(...temps);
+  const tempRange = maxTemp - minTemp || 1;
+
+  const minIdx = temps.indexOf(minTemp);
+  const maxIdx = temps.lastIndexOf(maxTemp);
+
+  // ViewBox coordinate system — we let CSS scale the SVG to fit the container.
+  const vbWidth = 340;
+  const iconRow = 22;
+  const chartBottom = 110;
+  const axisRow = 128;
+  const vbHeight = 140;
+  const padX = 16;
+  const chartHeight = 78;
+  // Leave headroom above the max so H/L labels don't clip the curve visually.
+  const yPad = 10;
+
+  const points = hours.map((h, i) => {
+    const x = padX + (i / (hours.length - 1)) * (vbWidth - padX * 2);
+    const normalized = (h.temperature - minTemp) / tempRange;
+    const y = chartBottom - yPad - normalized * (chartHeight - yPad * 2);
+    return { x, y, temp: h.temperature, time: h.time };
+  });
+
+  const linePath = buildSmoothPath(points);
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
+
+  const gradientId = 'weatherLineGradient';
+  const fillId = 'weatherAreaGradient';
+
+  return (
+    <svg
+      viewBox={`0 0 ${vbWidth} ${vbHeight}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full h-auto max-h-full"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#60a5fa" />
+          <stop offset="100%" stopColor="#67e8f9" />
+        </linearGradient>
+        <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+
+      {points.map((p, i) => {
+        const icon = weatherDescriptions[hours[i].weatherCode]?.icon ?? '❓';
+        return (
+          <text
+            key={`icon-${i}`}
+            x={p.x}
+            y={iconRow}
+            textAnchor="middle"
+            fontSize="14"
+          >
+            {icon}
+          </text>
+        );
+      })}
+
+      <path d={areaPath} fill={`url(#${fillId})`} />
+
+      <path
+        d={linePath}
+        fill="none"
+        stroke={`url(#${gradientId})`}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      <TempMarker point={points[maxIdx]} label="H" stroke="#67e8f9" above />
+      {minIdx !== maxIdx && (
+        <TempMarker point={points[minIdx]} label="L" stroke="#60a5fa" />
+      )}
+
+      {axisTicks(hours.length).map((i) => (
+        <text
+          key={`tick-${i}`}
+          x={points[i].x}
+          y={axisRow}
+          textAnchor="middle"
+          fontSize="10"
+          fill="#6b7280"
+        >
+          {formatHour(hours[i].time)}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+function TempMarker({
+  point,
+  label,
+  stroke,
+  above,
+}: {
+  point: { x: number; y: number; temp: number };
+  label: string;
+  stroke: string;
+  above?: boolean;
+}) {
+  return (
+    <>
+      <circle cx={point.x} cy={point.y} r="4" fill="#0f172a" stroke={stroke} strokeWidth="2" />
+      <text
+        x={point.x}
+        y={point.y + (above ? -10 : 16)}
+        textAnchor="middle"
+        fontSize="11"
+        fill="#e5e7eb"
+        fontWeight="600"
+      >
+        {label} {point.temp}°
+      </text>
+    </>
+  );
+}
+
+function axisTicks(n: number): number[] {
+  if (n <= 1) return [0];
+  if (n <= 3) return [0, n - 1];
+  return [0, Math.floor((n - 1) / 2), n - 1];
+}
+
+function formatHour(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    hour12: true,
+  });
+}
+
+function buildSmoothPath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  const tension = 0.5;
+  let d = `M ${points[0].x} ${points[0].y}`;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+
+    const cp1x = p1.x + ((p2.x - p0.x) / 6) * tension * 2;
+    const cp1y = p1.y + ((p2.y - p0.y) / 6) * tension * 2;
+    const cp2x = p2.x - ((p3.x - p1.x) / 6) * tension * 2;
+    const cp2y = p2.y - ((p3.y - p1.y) / 6) * tension * 2;
+
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+
+  return d;
 }
