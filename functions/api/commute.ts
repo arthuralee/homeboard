@@ -93,7 +93,9 @@ async function callRoutes(
       'x-goog-fieldmask': fieldMask,
     },
     body: JSON.stringify(body),
-    cf: { cacheTtl: 300, cacheEverything: true },
+    // Only cache successful responses; 4xx/5xx should retry fresh on the
+    // next request so a transient misconfig doesn't stick around for 5 min.
+    cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 300, '400-599': 0 } },
   });
   if (!res.ok) {
     return { _error: `upstream ${res.status}: ${(await res.text()).slice(0, 1500)}` };
@@ -254,10 +256,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if ('_error' in driveRes) errors.drive = driveRes._error;
 
   const responseBody: CommuteResponse = { walk, transit, drive, errors };
+  const anyError = Object.keys(errors).length > 0;
   return new Response(JSON.stringify(responseBody), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'public, max-age=300',
+      'cache-control': anyError ? 'no-store' : 'public, max-age=300',
     },
   });
 };

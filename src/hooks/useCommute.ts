@@ -207,7 +207,9 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
         }
         const data = (await res.json()) as RawCommuteResponse;
         if (cancelled) return;
-        writeCache(to, arriveBy, data);
+        if (Object.keys(data.errors ?? {}).length === 0) {
+          writeCache(to, arriveBy, data);
+        }
         setOptions(hydrate(data));
         setError(null);
       } catch (err) {
