@@ -15,11 +15,30 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     );
   }
 
-  const upstream = await fetch(feedUrl, {
+  const trimmed = feedUrl.trim();
+  const upstream = await fetch(trimmed, {
     cf: { cacheTtl: 60, cacheEverything: true },
   });
   if (!upstream.ok) {
-    return new Response(`upstream ${upstream.status}`, { status: 502 });
+    const hadWhitespace = trimmed !== feedUrl;
+    let host = '(invalid)';
+    let pathTail = '(invalid)';
+    try {
+      const parsed = new URL(trimmed);
+      host = parsed.host;
+      // last 12 chars of the path so we can see the token shape without
+      // leaking the full private URL
+      pathTail = parsed.pathname.slice(-12);
+    } catch {
+      // leave defaults
+    }
+    const bodySnippet = (await upstream.text()).slice(0, 160);
+    return new Response(
+      `upstream ${upstream.status}\n` +
+        `stored url: len=${feedUrl.length} trimmedLen=${trimmed.length} whitespace=${hadWhitespace} host=${host} …path${pathTail}\n` +
+        `upstream body: ${bodySnippet}`,
+      { status: 502, headers: { 'content-type': 'text/plain; charset=utf-8' } },
+    );
   }
 
   return new Response(upstream.body, {
