@@ -6,6 +6,45 @@ import {
   COMMUTE_OUTBOUND_DIRECTION,
 } from '../config/commute';
 
+// Cache Directions responses in localStorage so page reloads (and the 5-min
+// auto-refresh in App.tsx) don't re-hit the Function. TTL matches the edge
+// cache on /api/commute.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_KEY_PREFIX = 'commute:v1:';
+
+interface CachedEntry {
+  expiresAt: number;
+  data: RawCommuteResponse;
+}
+
+function cacheKey(to: string, arriveBy: string): string {
+  return `${CACHE_KEY_PREFIX}${to}|${arriveBy}`;
+}
+
+function readCache(to: string, arriveBy: string): RawCommuteResponse | null {
+  try {
+    const raw = localStorage.getItem(cacheKey(to, arriveBy));
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as CachedEntry;
+    if (Date.now() >= entry.expiresAt) {
+      localStorage.removeItem(cacheKey(to, arriveBy));
+      return null;
+    }
+    return entry.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(to: string, arriveBy: string, data: RawCommuteResponse): void {
+  try {
+    const entry: CachedEntry = { expiresAt: Date.now() + CACHE_TTL_MS, data };
+    localStorage.setItem(cacheKey(to, arriveBy), JSON.stringify(entry));
+  } catch {
+    // localStorage full or unavailable — silently ignore, next load will retry
+  }
+}
+
 interface RawCommuteResponse {
   totalMinutes: number;
   departureTime: string;
@@ -66,6 +105,38 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
     }
 
     let cancelled = false;
+
+    const hydrate = (data: RawCommuteResponse) => {
+      let transit: Commute['transit'] = null;
+      if (data.firstTransit) {
+        const ft = data.firstTransit;
+        const mapped = GOOGLE_STATION_MAP[`${ft.station}|${ft.line}`];
+        transit = {
+          stationId: mapped?.stationId ?? null,
+          displayName: mapped?.displayName ?? `${ft.station} (${ft.line})`,
+          googleStationName: ft.station,
+          line: ft.line,
+          direction: resolveDirection(ft.line, ft.headsign),
+          headsign: ft.headsign,
+          trainDeparture: new Date(ft.departureTime),
+        };
+      }
+      setCommute({
+        totalMinutes: data.totalMinutes,
+        departureTime: new Date(data.departureTime),
+        arrivalTime: new Date(data.arrivalTime),
+        transit,
+      });
+      setError(null);
+    };
+
+    const cached = readCache(to, arriveBy);
+    if (cached) {
+      hydrate(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const run = async () => {
@@ -78,29 +149,8 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
         }
         const data = (await res.json()) as RawCommuteResponse;
         if (cancelled) return;
-
-        let transit: Commute['transit'] = null;
-        if (data.firstTransit) {
-          const ft = data.firstTransit;
-          const mapped = GOOGLE_STATION_MAP[`${ft.station}|${ft.line}`];
-          transit = {
-            stationId: mapped?.stationId ?? null,
-            displayName: mapped?.displayName ?? `${ft.station} (${ft.line})`,
-            googleStationName: ft.station,
-            line: ft.line,
-            direction: resolveDirection(ft.line, ft.headsign),
-            headsign: ft.headsign,
-            trainDeparture: new Date(ft.departureTime),
-          };
-        }
-
-        setCommute({
-          totalMinutes: data.totalMinutes,
-          departureTime: new Date(data.departureTime),
-          arrivalTime: new Date(data.arrivalTime),
-          transit,
-        });
-        setError(null);
+        writeCache(to, arriveBy, data);
+        hydrate(data);
       } catch (err) {
         if (cancelled) return;
         console.error('Commute fetch error:', err);
