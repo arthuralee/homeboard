@@ -3,7 +3,7 @@
 // API key and home origin server-side as CF Pages secrets.
 
 interface Env {
-  GOOGLE_MAPS_API_KEY: string;
+  GOOGLE_MAPS_KEY: string;
   HOME_ORIGIN: string;
 }
 
@@ -32,8 +32,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if (!to || !arriveBy) {
     return new Response('missing to/arriveBy query params', { status: 400 });
   }
-  if (!env.GOOGLE_MAPS_API_KEY) {
-    return new Response('GOOGLE_MAPS_API_KEY not configured', { status: 500 });
+  if (!env.GOOGLE_MAPS_KEY) {
+    return new Response('GOOGLE_MAPS_KEY not configured', { status: 500 });
   }
   if (!env.HOME_ORIGIN) {
     return new Response('HOME_ORIGIN not configured', { status: 500 });
@@ -50,7 +50,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   directionsUrl.searchParams.set('mode', 'transit');
   directionsUrl.searchParams.set('transit_mode', 'subway|train|bus');
   directionsUrl.searchParams.set('arrival_time', String(arrivalUnix));
-  directionsUrl.searchParams.set('key', env.GOOGLE_MAPS_API_KEY);
+  directionsUrl.searchParams.set('key', env.GOOGLE_MAPS_KEY);
 
   // Cache by destination + arriveBy rounded to 5min so identical lookups don't
   // re-bill the Directions API.
