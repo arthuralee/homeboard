@@ -43,6 +43,13 @@ export const GOOGLE_STATION_MAP: Record<string, { stationId: string; displayName
   '34 St-Herald Sq|Q': { stationId: 'D17', displayName: '34th St Herald Sq (Q)' },
   '34 St-Herald Sq|R': { stationId: 'D17', displayName: '34th St Herald Sq (R)' },
   '34 St-Herald Sq|W': { stationId: 'D17', displayName: '34th St Herald Sq (W)' },
+  // 34 St-Penn Station: two separate GTFS parent stops
+  '34 St-Penn Station|1': { stationId: '132', displayName: '34th St-Penn Station (1)' },
+  '34 St-Penn Station|2': { stationId: '132', displayName: '34th St-Penn Station (2)' },
+  '34 St-Penn Station|3': { stationId: '132', displayName: '34th St-Penn Station (3)' },
+  '34 St-Penn Station|A': { stationId: 'A28', displayName: '34th St-Penn Station (A)' },
+  '34 St-Penn Station|C': { stationId: 'A28', displayName: '34th St-Penn Station (C)' },
+  '34 St-Penn Station|E': { stationId: 'A28', displayName: '34th St-Penn Station (E)' },
 };
 
 // Headsign keyword → MTA direction. First match wins per (line, headsign)
@@ -97,4 +104,19 @@ export const HEADSIGN_DIRECTION_RULES: Array<{
   // Q — 96 St (Upper East Side) ↔ Coney Island
   { line: 'Q', headsignContains: '96', direction: 'N' },
   { line: 'Q', headsignContains: 'Coney', direction: 'S' },
+  // A — Inwood (Manhattan) ↔ Far Rockaway / Lefferts Blvd (Queens)
+  { line: 'A', headsignContains: 'Inwood', direction: 'N' },
+  { line: 'A', headsignContains: '207', direction: 'N' },
+  { line: 'A', headsignContains: 'Far Rockaway', direction: 'S' },
+  { line: 'A', headsignContains: 'Lefferts', direction: 'S' },
+  { line: 'A', headsignContains: 'Ozone Park', direction: 'S' },
+  // C — 168 St (Washington Heights) ↔ Euclid Ave (Brooklyn)
+  { line: 'C', headsignContains: '168', direction: 'N' },
+  { line: 'C', headsignContains: 'Washington Heights', direction: 'N' },
+  { line: 'C', headsignContains: 'Euclid', direction: 'S' },
+  // E — Jamaica Center (Queens) ↔ World Trade Center (Manhattan)
+  { line: 'E', headsignContains: 'Jamaica', direction: 'N' },
+  { line: 'E', headsignContains: 'Parsons', direction: 'N' },
+  { line: 'E', headsignContains: 'World Trade', direction: 'S' },
+  { line: 'E', headsignContains: 'WTC', direction: 'S' },
 ];
