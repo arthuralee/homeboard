@@ -7,46 +7,10 @@ import {
   COMMUTE_MAX_HOURS_AHEAD,
 } from '../config/commute';
 
-// Bump to bust both the Cloudflare edge cache (passed as ?v= on the fetch)
-// and the localStorage cache (embedded in the cache key) whenever the
+// Passed as ?v= on the fetch URL to bust the CF edge cache when the
 // request/response shape changes.
 const COMMUTE_CACHE_VERSION = 2;
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const CACHE_KEY_PREFIX = `commute:v${COMMUTE_CACHE_VERSION}:`;
-
-interface CachedEntry {
-  expiresAt: number;
-  data: RawCommuteResponse;
-}
-
-function cacheKey(to: string, arriveBy: string): string {
-  return `${CACHE_KEY_PREFIX}${to}|${arriveBy}`;
-}
-
-function readCache(to: string, arriveBy: string): RawCommuteResponse | null {
-  try {
-    const raw = localStorage.getItem(cacheKey(to, arriveBy));
-    if (!raw) return null;
-    const entry = JSON.parse(raw) as CachedEntry;
-    if (Date.now() >= entry.expiresAt) {
-      localStorage.removeItem(cacheKey(to, arriveBy));
-      return null;
-    }
-    return entry.data;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(to: string, arriveBy: string, data: RawCommuteResponse): void {
-  try {
-    const entry: CachedEntry = { expiresAt: Date.now() + CACHE_TTL_MS, data };
-    localStorage.setItem(cacheKey(to, arriveBy), JSON.stringify(entry));
-  } catch {
-    // localStorage full or unavailable — silently ignore, next load will retry
-  }
-}
 
 interface RawTransitOption {
   totalMinutes: number;
@@ -187,17 +151,8 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
     }
 
     setFarAway(false);
-    let cancelled = false;
-
-    const cached = readCache(to, arriveBy);
-    if (cached) {
-      setOptions(hydrate(cached));
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
+    let cancelled = false;
 
     const run = async () => {
       try {
@@ -209,9 +164,6 @@ export function useCommute(event: CalendarEvent | undefined): UseCommuteResult {
         }
         const data = (await res.json()) as RawCommuteResponse;
         if (cancelled) return;
-        if (Object.keys(data.errors ?? {}).length === 0) {
-          writeCache(to, arriveBy, data);
-        }
         setOptions(hydrate(data));
         setError(null);
       } catch (err) {
