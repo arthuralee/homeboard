@@ -44,7 +44,7 @@ interface Route {
   legs?: Array<{
     steps?: Array<{
       travelMode?: string;
-      duration?: string;
+      staticDuration?: string;
       transitDetails?: {
         stopDetails?: {
           arrivalStop?: { name?: string };
@@ -138,7 +138,7 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
     const walkToStationSeconds = steps
       .slice(0, firstTransitIdx)
       .filter((s) => s.travelMode === 'WALK')
-      .reduce((acc, s) => acc + parseDurationSeconds(s.duration), 0);
+      .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
 
     // Transfers = number of TRANSIT steps minus 1 (counting any vehicle).
     const transitStepCount = steps.filter((s) => s.travelMode === 'TRANSIT').length;
@@ -240,7 +240,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     callRoutes(
       env.GOOGLE_MAPS_KEY,
       transitBody,
-      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.duration,routes.legs.steps.transitDetails',
+      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.staticDuration,routes.legs.steps.transitDetails',
     ),
     callRoutes(env.GOOGLE_MAPS_KEY, driveBody, 'routes.duration'),
   ]);
