@@ -8,7 +8,11 @@ interface Env {
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const feedUrl = context.env.ARTHUR_GCAL_LINK;
   if (!feedUrl) {
-    return new Response('ARTHUR_GCAL_LINK secret not configured', { status: 500 });
+    const keys = Object.keys(context.env ?? {}).sort();
+    return new Response(
+      `ARTHUR_GCAL_LINK not bound on context.env. Bound keys: [${keys.join(', ') || 'none'}]`,
+      { status: 500 },
+    );
   }
 
   const upstream = await fetch(feedUrl, {
