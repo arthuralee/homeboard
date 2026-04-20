@@ -10,7 +10,7 @@ import {
 // Bump to bust both the Cloudflare edge cache (passed as ?v= on the fetch)
 // and the localStorage cache (embedded in the cache key) whenever the
 // request/response shape changes.
-const COMMUTE_CACHE_VERSION = 1;
+const COMMUTE_CACHE_VERSION = 2;
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_KEY_PREFIX = `commute:v${COMMUTE_CACHE_VERSION}:`;

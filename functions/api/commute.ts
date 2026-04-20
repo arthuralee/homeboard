@@ -80,6 +80,13 @@ function parseDurationSeconds(duration: string | undefined): number {
   return match ? parseInt(match[1], 10) : 0;
 }
 
+// Google returns e.g. "A Line", "1 Line", "N Line" in transitLine.nameShort;
+// the MTA feed + our SubwayLine component use bare identifiers ("A", "1").
+function normalizeLineName(nameShort: string | undefined): string {
+  if (!nameShort) return '';
+  return nameShort.replace(/\s*Line\s*$/i, '').trim();
+}
+
 async function callRoutes(
   apiKey: string,
   body: Record<string, unknown>,
@@ -155,7 +162,7 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       transit: {
         station: td.stopDetails?.departureStop?.name ?? '',
         arrivalStation: td.stopDetails?.arrivalStop?.name ?? '',
-        line: td.transitLine?.nameShort ?? '',
+        line: normalizeLineName(td.transitLine?.nameShort),
         headsign: td.headsign ?? '',
         departureTime: td.stopDetails?.departureTime ?? '',
         arrivalTime: td.stopDetails?.arrivalTime ?? '',
