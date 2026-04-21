@@ -115,16 +115,16 @@ function SimpleOptionBlock({
   dimmed?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-between rounded-xl bg-gray-900/60 px-4 py-3 ${dimmed ? 'opacity-40' : ''}`}>
-      <div className="flex items-center gap-4 min-w-0">
-        <span className="text-4xl" aria-hidden>{emoji}</span>
-        <div className="min-w-0 flex items-baseline gap-3">
-          <div className="text-3xl font-bold text-white">{label}</div>
-          <div className="text-xl text-gray-300 font-medium">{subtitle}</div>
-        </div>
+    <div className={`rounded-xl bg-gray-900/60 px-4 py-3 ${dimmed ? 'opacity-40' : ''}`}>
+      <div className="flex items-center gap-3 text-2xl font-bold text-white">
+        <span className="text-3xl" aria-hidden>{emoji}</span>
+        <span>{label}</span>
+        <span className="text-gray-300 font-medium">{subtitle}</span>
       </div>
       {!dimmed && (
-        <div className="text-xl text-white whitespace-nowrap font-semibold">{formatLeaveBy(departureTime, now)}</div>
+        <div className="mt-1 text-xl text-white font-semibold">
+          {formatLeaveBy(departureTime, now)}
+        </div>
       )}
     </div>
   );
@@ -208,7 +208,7 @@ export function CommuteCard({ event }: CommuteCardProps) {
   const { arrivals, error: subwayError } = useSubwayArrivals(stationIds);
 
   const orderedOptions = useMemo(() => {
-    const kindRank: Record<CommuteOption['kind'], number> = { walk: 0, transit: 1, drive: 2 };
+    const kindRank: Record<CommuteOption['kind'], number> = { walk: 0, drive: 1, transit: 2 };
     return [...options].sort((a, b) => kindRank[a.kind] - kindRank[b.kind]);
   }, [options]);
 
