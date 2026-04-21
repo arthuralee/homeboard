@@ -86,29 +86,31 @@ export function Citibike() {
   }, []);
 
   if (error) {
-    return <div className="text-gray-500 text-xl">{error}</div>;
+    return <div className="text-gray-300 text-3xl">{error}</div>;
   }
 
   if (!data) {
-    return <div className="text-gray-500 text-xl animate-pulse">Loading bikes...</div>;
+    return <div className="text-gray-300 text-3xl animate-pulse">Loading bikes...</div>;
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 flex items-center justify-around gap-4">
-        <div className="flex flex-col items-center">
-          <div className="text-4xl" aria-hidden>🚲</div>
-          <div className="text-5xl font-light text-white tabular-nums mt-1">
+    <div className="h-full flex items-center justify-around gap-6">
+      <div className="flex items-center gap-4">
+        <div className="text-7xl leading-none" aria-hidden>🚲</div>
+        <div className="flex flex-col items-start">
+          <div className="text-7xl font-semibold text-white tabular-nums leading-none">
             {data.bikes}
           </div>
-          <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Bikes</div>
+          <div className="text-xl text-gray-300 uppercase tracking-wide font-semibold mt-2">Bikes</div>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="text-4xl" aria-hidden>⚡</div>
-          <div className="text-5xl font-light text-white tabular-nums mt-1">
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="text-7xl leading-none" aria-hidden>⚡</div>
+        <div className="flex flex-col items-start">
+          <div className="text-7xl font-semibold text-white tabular-nums leading-none">
             {data.ebikes}
           </div>
-          <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">E-Bikes</div>
+          <div className="text-xl text-gray-300 uppercase tracking-wide font-semibold mt-2">E-Bikes</div>
         </div>
       </div>
     </div>

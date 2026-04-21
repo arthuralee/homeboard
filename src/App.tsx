@@ -1,7 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
-import { SubwayStatus } from './components/SubwayStatus';
 import { Citibike } from './components/Citibike';
 import { CommuteCard } from './components/CommuteCard';
 import { useCalendar } from './hooks/useCalendar';
@@ -17,10 +16,10 @@ function Widget({
 }) {
   return (
     <section
-      className={`bg-gray-800/40 rounded-2xl p-5 flex flex-col min-w-0 min-h-0 ${className}`}
+      className={`bg-gray-800/60 rounded-2xl p-6 flex flex-col min-w-0 min-h-0 ${className}`}
     >
       {title && (
-        <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+        <h2 className="text-lg text-gray-300 uppercase tracking-wider font-semibold mb-4 flex-shrink-0">
           {title}
         </h2>
       )}
@@ -70,27 +69,20 @@ function App() {
         <Clock />
       </header>
 
-      {/* Main content — 3-column × 6-row widget grid. Widgets can span any
-          number of cells; unused cells stay empty for future widgets. */}
-      <main className="flex-1 min-h-0 grid grid-cols-3 grid-rows-6 gap-4">
+      {/* Main content — 4-column × 2-row widget grid. Weather takes exactly
+          half the grid; the commute card fills the other half when present. */}
+      <main className="flex-1 min-h-0 grid grid-cols-4 grid-rows-2 gap-4">
         {nextCommute && (
-          <Widget className="col-span-1 row-span-6">
+          <Widget className="col-span-2 row-span-2">
             <CommuteCard event={nextCommute} />
           </Widget>
         )}
 
-        <Widget
-          title="Subway Arrivals"
-          className={`${nextCommute ? 'col-span-1' : 'col-span-2'} row-span-6`}
-        >
-          <SubwayStatus />
-        </Widget>
-
-        <Widget title="Weather" className="col-span-1 row-span-4">
+        <Widget title="Weather" className={`${nextCommute ? 'col-span-2' : 'col-span-4'} row-span-1`}>
           <Weather />
         </Widget>
 
-        <Widget title="Citibike — Broadway & W 29th" className="col-span-1 row-span-2">
+        <Widget title="Citibike — Broadway & W 29th" className={`${nextCommute ? 'col-span-2' : 'col-span-4'} row-span-1`}>
           <Citibike />
         </Widget>
       </main>

@@ -88,16 +88,16 @@ function useSubwayArrivals(stationIds: string[]): { arrivals: Arrival[]; error: 
 }
 
 function EventHeader({ event, now, subtle }: { event: CalendarEvent; now: Date; subtle?: boolean }) {
-  const titleSize = subtle ? 'text-3xl' : 'text-2xl';
+  const titleSize = subtle ? 'text-5xl' : 'text-4xl';
   return (
     <div className="flex-shrink-0">
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+      <div className="text-lg text-gray-300 uppercase tracking-wider font-semibold mb-2">
         Up next{!subtle && ` · in ${formatCountdown(event.start, now)}`}
       </div>
       <div className={`${titleSize} font-bold text-white leading-tight truncate`}>
         {event.summary}
       </div>
-      <div className="text-base text-gray-300 mt-0.5 truncate">
+      <div className="text-2xl text-gray-200 mt-2 truncate font-medium">
         {event.location ? `${event.location} · ` : ''}
         {subtle ? formatEventWhen(event.start, now) : formatClockTime(event.start)}
       </div>
@@ -121,16 +121,16 @@ function SimpleOptionBlock({
   dimmed?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-between rounded-xl bg-gray-900/40 p-3 ${dimmed ? 'opacity-40' : ''}`}>
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-3xl" aria-hidden>{emoji}</span>
+    <div className={`flex items-center justify-between rounded-xl bg-gray-900/60 p-4 ${dimmed ? 'opacity-40' : ''}`}>
+      <div className="flex items-center gap-4 min-w-0">
+        <span className="text-5xl" aria-hidden>{emoji}</span>
         <div className="min-w-0">
-          <div className="text-xl font-semibold text-white">{label}</div>
-          <div className="text-sm text-gray-400">{subtitle}</div>
+          <div className="text-3xl font-bold text-white">{label}</div>
+          <div className="text-xl text-gray-300 font-medium">{subtitle}</div>
         </div>
       </div>
       {!dimmed && (
-        <div className="text-sm text-gray-300 whitespace-nowrap">{formatLeaveBy(departureTime, now)}</div>
+        <div className="text-xl text-white whitespace-nowrap font-semibold">{formatLeaveBy(departureTime, now)}</div>
       )}
     </div>
   );
@@ -171,36 +171,36 @@ function TransitBlock({
   ];
 
   return (
-    <div className="rounded-xl bg-gray-900/40 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <SubwayLine line={option.transit.line} size="md" />
+    <div className="rounded-xl bg-gray-900/60 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <SubwayLine line={option.transit.line} size="lg" />
           <div className="min-w-0">
-            <div className="text-xl font-semibold text-white truncate">
+            <div className="text-3xl font-bold text-white truncate">
               {option.transit.displayName}
             </div>
-            <div className="text-sm text-gray-400 truncate">toward {option.transit.headsign}</div>
+            <div className="text-xl text-gray-300 truncate font-medium">toward {option.transit.headsign}</div>
           </div>
         </div>
-        <div className="text-sm text-gray-300 whitespace-nowrap flex-shrink-0">
+        <div className="text-xl text-white whitespace-nowrap flex-shrink-0 font-semibold">
           {formatLeaveBy(option.departureTime, now)}
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-2 text-base text-gray-200 flex-wrap">
+      <div className="mt-3 flex items-center gap-2 text-xl text-gray-100 flex-wrap font-semibold">
         <WalkDuration minutes={option.walkToStationMinutes} />
-        <span className="text-gray-500" aria-hidden>›</span>
-        <SubwayLine line={option.transit.line} size="sm" />
-        <span className="text-gray-500" aria-hidden>›</span>
+        <span className="text-gray-400" aria-hidden>›</span>
+        <SubwayLine line={option.transit.line} size="md" />
+        <span className="text-gray-400" aria-hidden>›</span>
         <WalkDuration minutes={option.walkFromStationMinutes} />
-        <span className="text-sm text-gray-500 ml-1">· {summaryBits.join(' · ')}</span>
+        <span className="text-lg text-gray-300 ml-1 font-medium">· {summaryBits.join(' · ')}</span>
       </div>
-      <div className="mt-1 text-base text-gray-200">
+      <div className="mt-2 text-xl text-gray-100 font-medium">
         {option.transit.stationId === null ? (
-          <span className="text-gray-500">
+          <span className="text-gray-400">
             No live-arrivals mapping for "{option.transit.googleStationName}"
           </span>
         ) : upcoming.length === 0 ? (
-          <span className="text-gray-500">No upcoming trains</span>
+          <span className="text-gray-400">No upcoming trains</span>
         ) : (
           <>Next: {upcoming.map((a) => formatArrivalBadge(a.arrivalTime, now)).join(' · ')}</>
         )}
@@ -234,14 +234,14 @@ export function CommuteCard({ event }: CommuteCardProps) {
   }
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="h-full flex flex-col gap-4">
       <EventHeader event={event} now={now} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
         {loading && options.length === 0 ? (
-          <div className="text-gray-500 text-lg animate-pulse">Looking up routes…</div>
+          <div className="text-gray-300 text-2xl animate-pulse">Looking up routes…</div>
         ) : options.length === 0 ? (
-          <div className="text-gray-500 text-lg">
+          <div className="text-gray-300 text-2xl">
             {error ? `No routes (${error})` : 'No routes available'}
           </div>
         ) : (
@@ -275,7 +275,7 @@ export function CommuteCard({ event }: CommuteCardProps) {
               return <TransitBlock key={idx} option={o} arrivals={arrivals} now={now} />;
             })}
             {subwayError && (
-              <div className="text-xs text-gray-500">Subway live data: {subwayError}</div>
+              <div className="text-base text-gray-300">Subway live data: {subwayError}</div>
             )}
           </>
         )}

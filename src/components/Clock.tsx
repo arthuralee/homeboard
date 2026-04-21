@@ -16,11 +16,11 @@ export function Clock() {
   });
 
   return (
-    <div className="flex items-baseline gap-4">
-      <div className="text-6xl font-light tracking-tight text-white">
+    <div className="flex items-baseline gap-6">
+      <div className="text-8xl font-semibold tracking-tight text-white">
         {timeString}
       </div>
-      <div className="text-xl text-gray-400">
+      <div className="text-3xl font-medium text-gray-200">
         {dateString}
       </div>
     </div>

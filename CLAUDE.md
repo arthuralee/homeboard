@@ -20,9 +20,10 @@ Homeboard is a glanceable, at-a-distance dashboard designed for an iPad mounted 
 homeboard/
 ├── src/
 │   ├── components/
+│   │   ├── Citibike.tsx       # Nearby Citibike dock availability
 │   │   ├── Clock.tsx          # Time display
-│   │   ├── SubwayLine.tsx     # Individual subway line badge
-│   │   ├── SubwayStatus.tsx   # Main subway arrivals component
+│   │   ├── CommuteCard.tsx    # Next commute (calendar + transit) card
+│   │   ├── SubwayLine.tsx     # Individual subway line badge (used by CommuteCard)
 │   │   └── Weather.tsx        # Weather display component
 │   ├── types/index.ts         # TypeScript type definitions
 │   ├── App.tsx                # Main app component
@@ -47,11 +48,11 @@ npm run preview      # Preview production build
 
 ## Key Configuration Points
 
-### Subway Stations
-Edit `src/components/SubwayStatus.tsx` - modify the `STATIONS` array with GTFS station IDs.
-
 ### Weather Location
 Edit `src/components/Weather.tsx` - modify `NYC_LAT` and `NYC_LON` constants.
+
+### Citibike Station
+Edit `src/components/Citibike.tsx` - modify `STATION_SHORT_NAME` to the dock printed on the station sign.
 
 ## Design Guidelines
 
