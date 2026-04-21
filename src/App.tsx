@@ -3,6 +3,7 @@ import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
 import { Citibike } from './components/Citibike';
 import { CommuteCard } from './components/CommuteCard';
+import { Photos } from './components/Photos';
 import { TripCountdown } from './components/TripCountdown';
 import { useCalendar } from './hooks/useCalendar';
 
@@ -90,6 +91,10 @@ function App() {
 
         <Widget title="Citibike — Broadway & W 29th" className="col-span-2 col-start-5 row-span-2">
           <Citibike />
+        </Widget>
+
+        <Widget className="col-span-2 col-start-3 row-span-3 row-start-2">
+          <Photos />
         </Widget>
 
         {nextTrip && (
