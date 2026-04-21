@@ -7,4 +7,11 @@ export interface WeatherData {
   precipitation: number;
   windSpeed: number;
   uvIndex: number;
+  hourlyForecast: HourlyForecast[];
+}
+
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  weatherCode: number;
 }
