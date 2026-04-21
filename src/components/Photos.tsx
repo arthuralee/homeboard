@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-const CYCLE_MS = 15_000;
+const CYCLE_MS = 30_000;
 const LIST_REFRESH_MS = 60 * 60 * 1000;
 
 function shuffle<T>(items: readonly T[]): T[] {

@@ -116,13 +116,13 @@ function SimpleOptionBlock({
 }) {
   return (
     <div className={`rounded-xl bg-gray-900/60 px-4 py-3 ${dimmed ? 'opacity-40' : ''}`}>
-      <div className="flex items-center gap-3 text-2xl font-bold text-white">
-        <span className="text-3xl" aria-hidden>{emoji}</span>
+      <div className="flex items-center gap-3 text-xl font-bold text-white">
+        <span className="text-2xl" aria-hidden>{emoji}</span>
         <span>{label}</span>
         <span className="text-gray-300 font-medium">{subtitle}</span>
       </div>
       {!dimmed && (
-        <div className="mt-1 text-xl text-white font-semibold">
+        <div className="mt-1 text-lg text-white font-semibold">
           {formatLeaveBy(departureTime, now)}
         </div>
       )}
@@ -131,12 +131,7 @@ function SimpleOptionBlock({
 }
 
 function WalkDuration({ minutes }: { minutes: number }) {
-  return (
-    <span className="flex items-center gap-1">
-      <span aria-hidden>🚶</span>
-      <span>{minutes}m</span>
-    </span>
-  );
+  return <span>{minutes}m</span>;
 }
 
 function TransitBlock({
@@ -168,7 +163,7 @@ function TransitBlock({
 
   return (
     <div className="rounded-xl bg-gray-900/60 px-4 py-3">
-      <div className="flex items-center gap-2 text-2xl font-bold text-white flex-wrap">
+      <div className="flex items-center gap-2 text-xl font-bold text-white flex-wrap">
         <WalkDuration minutes={option.walkToStationMinutes} />
         {waitMinutes !== null && (
           <>
@@ -184,7 +179,7 @@ function TransitBlock({
         <span className="text-gray-400" aria-hidden>›</span>
         <WalkDuration minutes={option.walkFromStationMinutes} />
       </div>
-      <div className="mt-1 text-xl text-white font-semibold">
+      <div className="mt-1 text-lg text-white font-semibold">
         {formatLeaveBy(option.departureTime, now)}
       </div>
     </div>
