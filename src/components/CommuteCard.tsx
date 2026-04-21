@@ -136,6 +136,15 @@ function SimpleOptionBlock({
   );
 }
 
+function WalkDuration({ minutes }: { minutes: number }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span aria-hidden>🚶</span>
+      <span>{minutes}m</span>
+    </span>
+  );
+}
+
 function TransitBlock({
   option,
   arrivals,
@@ -156,9 +165,8 @@ function TransitBlock({
     .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime())
     .slice(0, 3);
 
-  const detailBits = [
+  const summaryBits = [
     `${option.totalMinutes} min`,
-    `${option.walkToStationMinutes} min walk`,
     option.transferCount === 0 ? 'direct' : `${option.transferCount} transfer${option.transferCount > 1 ? 's' : ''}`,
   ];
 
@@ -178,7 +186,14 @@ function TransitBlock({
           {formatLeaveBy(option.departureTime, now)}
         </div>
       </div>
-      <div className="mt-2 text-sm text-gray-500">{detailBits.join(' · ')}</div>
+      <div className="mt-2 flex items-center gap-2 text-base text-gray-200 flex-wrap">
+        <WalkDuration minutes={option.walkToStationMinutes} />
+        <span className="text-gray-500" aria-hidden>›</span>
+        <SubwayLine line={option.transit.line} size="sm" />
+        <span className="text-gray-500" aria-hidden>›</span>
+        <WalkDuration minutes={option.walkFromStationMinutes} />
+        <span className="text-sm text-gray-500 ml-1">· {summaryBits.join(' · ')}</span>
+      </div>
       <div className="mt-1 text-base text-gray-200">
         {option.transit.stationId === null ? (
           <span className="text-gray-500">

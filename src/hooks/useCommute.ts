@@ -9,7 +9,7 @@ import {
 
 // Passed as ?v= on the fetch URL to bust the CF edge cache when the
 // request/response shape changes.
-const COMMUTE_CACHE_VERSION = 2;
+const COMMUTE_CACHE_VERSION = 3;
 
 
 interface RawTransitOption {
@@ -17,6 +17,7 @@ interface RawTransitOption {
   departureTime: string;
   arrivalTime: string;
   walkToStationMinutes: number;
+  walkFromStationMinutes: number;
   transferCount: number;
   transit: {
     station: string;
@@ -58,6 +59,7 @@ export interface TransitOption {
   totalMinutes: number;
   departureTime: Date;
   walkToStationMinutes: number;
+  walkFromStationMinutes: number;
   transferCount: number;
   transit: {
     stationId: string | null;
@@ -103,6 +105,7 @@ function hydrate(raw: RawCommuteResponse): CommuteOption[] {
       totalMinutes: t.totalMinutes,
       departureTime: new Date(t.departureTime),
       walkToStationMinutes: t.walkToStationMinutes,
+      walkFromStationMinutes: t.walkFromStationMinutes,
       transferCount: t.transferCount,
       transit: {
         stationId: mapped?.stationId ?? null,

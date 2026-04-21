@@ -22,6 +22,7 @@ interface TransitOption {
   departureTime: string;
   arrivalTime: string;
   walkToStationMinutes: number;
+  walkFromStationMinutes: number;
   transferCount: number;
   transit: TransitStep;
 }
@@ -149,6 +150,12 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       .filter((s) => s.travelMode === 'WALK')
       .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
 
+    const lastTransitIdx = steps.findLastIndex((s) => s.travelMode === 'TRANSIT');
+    const walkFromStationSeconds = steps
+      .slice(lastTransitIdx + 1)
+      .filter((s) => s.travelMode === 'WALK')
+      .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
+
     // Transfers = number of TRANSIT steps minus 1 (counting any vehicle).
     const transitStepCount = steps.filter((s) => s.travelMode === 'TRANSIT').length;
     const transferCount = Math.max(0, transitStepCount - 1);
@@ -158,6 +165,7 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       departureTime: new Date(arriveByDate.getTime() - totalSeconds * 1000).toISOString(),
       arrivalTime: arriveByDate.toISOString(),
       walkToStationMinutes: Math.round(walkToStationSeconds / 60),
+      walkFromStationMinutes: Math.round(walkFromStationSeconds / 60),
       transferCount,
       transit: {
         station: td.stopDetails?.departureStop?.name ?? '',
