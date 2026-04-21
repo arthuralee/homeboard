@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import ICAL from 'ical.js';
-import { CALENDAR_REFRESH_MS, COMMUTE_LOOKAHEAD_HOURS } from '../config/commute';
+import {
+  CALENDAR_REFRESH_MS,
+  COMMUTE_LOOKAHEAD_HOURS,
+  TRIP_LOOKAHEAD_DAYS,
+} from '../config/commute';
 
 export interface CalendarEvent {
   summary: string;
@@ -77,7 +81,11 @@ export function useCalendar(): UseCalendarResult {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         const now = new Date();
-        const windowEnd = new Date(now.getTime() + COMMUTE_LOOKAHEAD_HOURS * 3600_000);
+        const windowMs = Math.max(
+          COMMUTE_LOOKAHEAD_HOURS * 3600_000,
+          TRIP_LOOKAHEAD_DAYS * 24 * 3600_000,
+        );
+        const windowEnd = new Date(now.getTime() + windowMs);
         const expanded = expandEvents(text, now, windowEnd);
         if (cancelled) return;
         setEvents(expanded);
