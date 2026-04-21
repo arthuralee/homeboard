@@ -27,6 +27,9 @@ export const COMMUTE_LOOKAHEAD_HOURS = 168;
 export const COMMUTE_MAX_HOURS_AHEAD = 12;
 export const CALENDAR_REFRESH_MS = 5 * 60 * 1000;
 
+// How far ahead the trip countdown widget looks for the next flight.
+export const TRIP_LOOKAHEAD_DAYS = 365;
+
 // Map from (Google departure-station name, line short_name) to MTA GTFS
 // station ID. Add entries here for any station near home that Google's
 // Directions API might route you through.

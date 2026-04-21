@@ -3,6 +3,7 @@ import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
 import { Citibike } from './components/Citibike';
 import { CommuteCard } from './components/CommuteCard';
+import { TripCountdown } from './components/TripCountdown';
 import { useCalendar } from './hooks/useCalendar';
 
 function Widget({
@@ -32,8 +33,13 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { events: calendarEvents } = useCalendar();
   // Events from the hook are already filtered to the lookahead window and
-  // sorted ascending, so the first one with a location is the next commute.
-  const nextCommute = calendarEvents.find((e) => e.location.trim().length > 0);
+  // sorted ascending. Flights have a LOCATION set (origin airport) so exclude
+  // them when picking the next commute — otherwise an upcoming trip would
+  // masquerade as a commute.
+  const nextCommute = calendarEvents.find(
+    (e) => !e.summary.startsWith('Flight to ') && e.location.trim().length > 0,
+  );
+  const nextTrip = calendarEvents.find((e) => e.summary.startsWith('Flight to '));
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -85,6 +91,15 @@ function App() {
         <Widget title="Citibike — Broadway & W 29th" className="col-span-2 col-start-5 row-span-2">
           <Citibike />
         </Widget>
+
+        {nextTrip && (
+          <Widget
+            title="Next Trip"
+            className="col-span-2 col-start-3 row-span-2 row-start-5"
+          >
+            <TripCountdown event={nextTrip} />
+          </Widget>
+        )}
       </main>
 
       {/* Fullscreen toggle button - subtle, bottom right */}
