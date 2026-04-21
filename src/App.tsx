@@ -1,10 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Clock } from './components/Clock';
 import { Weather } from './components/Weather';
 import { SubwayStatus } from './components/SubwayStatus';
 import { Citibike } from './components/Citibike';
 import { CommuteCard } from './components/CommuteCard';
 import { useCalendar } from './hooks/useCalendar';
+
+function Widget({
+  title,
+  className = '',
+  children,
+}: {
+  title?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={`bg-gray-800/40 rounded-2xl p-5 flex flex-col min-w-0 min-h-0 ${className}`}
+    >
+      {title && (
+        <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
+          {title}
+        </h2>
+      )}
+      <div className="flex-1 min-h-0">{children}</div>
+    </section>
+  );
+}
 
 function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -47,49 +70,29 @@ function App() {
         <Clock />
       </header>
 
-      {/* Main content - Two panel layout */}
-      <main className="flex-1 min-h-0 flex gap-6">
-        {/* Main panel (left, larger): commute card when there's an upcoming event,
-            otherwise the full subway grid. */}
-        <section className="flex-1 bg-gray-800/40 rounded-2xl p-5 flex flex-col min-w-0">
-          {nextCommute ? (
-            <div className="flex-1 min-h-0">
-              <CommuteCard event={nextCommute} />
-            </div>
-          ) : (
-            <>
-              <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-                Subway Arrivals
-              </h2>
-              <div className="flex-1 min-h-0">
-                <SubwayStatus />
-              </div>
-            </>
-          )}
-        </section>
+      {/* Main content — 3-column × 6-row widget grid. Widgets can span any
+          number of cells; unused cells stay empty for future widgets. */}
+      <main className="flex-1 min-h-0 grid grid-cols-3 grid-rows-6 gap-4">
+        {nextCommute && (
+          <Widget className="col-span-1 row-span-6">
+            <CommuteCard event={nextCommute} />
+          </Widget>
+        )}
 
-        {/* Right column - Weather + Citibike stacked */}
-        <div className="w-[380px] flex-shrink-0 flex flex-col gap-4 min-h-0">
-          {/* Weather Panel */}
-          <section className="flex-1 min-h-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col">
-            <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-              Weather
-            </h2>
-            <div className="flex-1 min-h-0">
-              <Weather />
-            </div>
-          </section>
+        <Widget
+          title="Subway Arrivals"
+          className={`${nextCommute ? 'col-span-1' : 'col-span-2'} row-span-6`}
+        >
+          <SubwayStatus />
+        </Widget>
 
-          {/* Citibike Panel */}
-          <section className="flex-shrink-0 bg-gray-800/40 rounded-2xl p-5 flex flex-col h-48">
-            <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3 flex-shrink-0">
-              Citibike — Broadway & W 29th
-            </h2>
-            <div className="flex-1 min-h-0">
-              <Citibike />
-            </div>
-          </section>
-        </div>
+        <Widget title="Weather" className="col-span-1 row-span-4">
+          <Weather />
+        </Widget>
+
+        <Widget title="Citibike — Broadway & W 29th" className="col-span-1 row-span-2">
+          <Citibike />
+        </Widget>
       </main>
 
       {/* Fullscreen toggle button - subtle, bottom right */}
