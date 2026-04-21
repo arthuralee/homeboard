@@ -6,3 +6,10 @@ pages_build_output_dir = "dist"
 # Environment variables (set these in Cloudflare Dashboard)
 # ARTHUR_GCAL_LINK: Google Calendar iCal URL, set as a secret in the CF Pages
 # dashboard. Read at runtime by functions/api/calendar.ts via context.env.
+
+# R2 bucket holding the curated photos for the <Photos /> widget. Upload
+# images directly to the bucket (any common web format) — they stay out of
+# git and are served through functions/api/photos.ts.
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "homeboard-photos"
