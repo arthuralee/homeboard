@@ -93,7 +93,7 @@ function App() {
           <Citibike />
         </Widget>
 
-        <Widget className="col-span-2 col-start-3 row-span-4">
+        <Widget className="col-span-2 col-start-3 row-span-3">
           <Photos />
         </Widget>
 
