@@ -19,7 +19,7 @@ function Widget({
       className={`bg-gray-800/60 rounded-2xl p-6 flex flex-col min-w-0 min-h-0 ${className}`}
     >
       {title && (
-        <h2 className="text-lg text-gray-300 uppercase tracking-wider font-semibold mb-4 flex-shrink-0">
+        <h2 className="text-base text-gray-300 uppercase tracking-wider font-semibold mb-3 flex-shrink-0">
           {title}
         </h2>
       )}
