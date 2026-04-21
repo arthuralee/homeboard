@@ -102,13 +102,13 @@ export function Weather() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center gap-5 mb-5">
-        <div className="text-8xl leading-none">{weatherInfo.icon}</div>
+      <div className="flex items-center gap-4 mb-4">
+        <div className="text-6xl leading-none">{weatherInfo.icon}</div>
         <div>
-          <div className="text-8xl font-semibold text-white tracking-tight leading-none">
+          <div className="text-6xl font-semibold text-white tracking-tight leading-none">
             {weather.temperature}°
           </div>
-          <div className="text-2xl font-medium text-gray-200 mt-2">{weatherInfo.label}</div>
+          <div className="text-xl font-medium text-gray-200 mt-1">{weatherInfo.label}</div>
         </div>
       </div>
 

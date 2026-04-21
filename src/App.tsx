@@ -85,11 +85,11 @@ function App() {
           </Widget>
         )}
 
-        <Widget title="Weather" className="col-span-2 col-start-5 row-span-4">
+        <Widget title="Weather" className="col-span-2 col-start-5 row-span-6">
           <Weather />
         </Widget>
 
-        <Widget title="Citibike — Broadway & W 29th" className="col-span-2 col-start-5 row-span-2">
+        <Widget title="Citibike — Broadway & W 29th" className="col-span-2 col-start-3 row-span-1 row-start-1">
           <Citibike />
         </Widget>
 
