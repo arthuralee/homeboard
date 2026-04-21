@@ -166,37 +166,26 @@ function TransitBlock({
     ? Math.max(0, Math.round((new Date(nextCatch.arrivalTime).getTime() - reachStationAt) / 60_000))
     : null;
 
-  const summary = [
-    `${option.totalMinutes}m`,
-    option.transferCount === 0 ? 'direct' : `${option.transferCount} transfer${option.transferCount > 1 ? 's' : ''}`,
-  ].join(' · ');
-
-  const hasLiveMapping = option.transit.stationId !== null;
-
   return (
     <div className="rounded-xl bg-gray-900/60 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-2xl font-bold text-white">
-          <WalkDuration minutes={option.walkToStationMinutes} />
-          <span className="text-gray-400" aria-hidden>›</span>
-          <SubwayLine line={option.transit.line} size="md" />
-          <span className="text-gray-400" aria-hidden>›</span>
-          <WalkDuration minutes={option.walkFromStationMinutes} />
-        </div>
-        <div className="text-xl text-white whitespace-nowrap font-semibold">
-          {formatLeaveBy(option.departureTime, now)}
-        </div>
-      </div>
-      <div className="mt-1 text-lg text-gray-300 font-medium">
-        {!hasLiveMapping ? (
-          <span>{summary}</span>
-        ) : waitMinutes !== null ? (
-          <span>
-            <span className="text-white">wait {waitMinutes}m</span> at station · {summary}
-          </span>
-        ) : (
-          <span>no upcoming trains · {summary}</span>
+      <div className="flex items-center gap-2 text-2xl font-bold text-white flex-wrap">
+        <WalkDuration minutes={option.walkToStationMinutes} />
+        {waitMinutes !== null && (
+          <>
+            <span className="text-gray-400" aria-hidden>›</span>
+            <span className="flex items-center gap-1">
+              <span aria-hidden>⏳</span>
+              <span>{waitMinutes}m</span>
+            </span>
+          </>
         )}
+        <span className="text-gray-400" aria-hidden>›</span>
+        <SubwayLine line={option.transit.line} size="md" />
+        <span className="text-gray-400" aria-hidden>›</span>
+        <WalkDuration minutes={option.walkFromStationMinutes} />
+      </div>
+      <div className="mt-1 text-xl text-white font-semibold">
+        {formatLeaveBy(option.departureTime, now)}
       </div>
     </div>
   );
