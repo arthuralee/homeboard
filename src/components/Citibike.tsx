@@ -94,23 +94,23 @@ export function Citibike() {
   }
 
   return (
-    <div className="h-full flex items-center justify-around gap-6">
-      <div className="flex items-center gap-4">
-        <div className="text-7xl leading-none" aria-hidden>🚲</div>
+    <div className="h-full flex items-center justify-around gap-4">
+      <div className="flex items-center gap-3">
+        <div className="text-5xl leading-none" aria-hidden>🚲</div>
         <div className="flex flex-col items-start">
-          <div className="text-7xl font-semibold text-white tabular-nums leading-none">
+          <div className="text-5xl font-semibold text-white tabular-nums leading-none">
             {data.bikes}
           </div>
-          <div className="text-xl text-gray-300 uppercase tracking-wide font-semibold mt-2">Bikes</div>
+          <div className="text-base text-gray-300 uppercase tracking-wide font-semibold mt-1">Bikes</div>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="text-7xl leading-none" aria-hidden>⚡</div>
+      <div className="flex items-center gap-3">
+        <div className="text-5xl leading-none" aria-hidden>⚡</div>
         <div className="flex flex-col items-start">
-          <div className="text-7xl font-semibold text-white tabular-nums leading-none">
+          <div className="text-5xl font-semibold text-white tabular-nums leading-none">
             {data.ebikes}
           </div>
-          <div className="text-xl text-gray-300 uppercase tracking-wide font-semibold mt-2">E-Bikes</div>
+          <div className="text-base text-gray-300 uppercase tracking-wide font-semibold mt-1">E-Bikes</div>
         </div>
       </div>
     </div>
