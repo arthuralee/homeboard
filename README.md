@@ -1,32 +1,19 @@
 # Homeboard
 
-A glanceable at-a-distance dashboard designed for an iPad mounted in landscape mode. Shows real-time NYC subway arrivals and current weather.
+A glanceable at-a-distance dashboard designed for an iPad mounted in landscape mode. Shows your next commute (with live NYC subway arrivals), current weather, and nearby Citibike availability.
 
 ## Features
 
-- **Real-time Subway Arrivals**: Shows upcoming trains for configured stations using the official MTA API
+- **Next Commute**: Shows your next calendar event with a location plus the best walk/drive/transit options. Transit options include live MTA arrival times.
 - **Current Weather**: Temperature and conditions from Open-Meteo (no API key required)
+- **Citibike Availability**: Bikes and e-bikes at a nearby dock
 - **Large, Readable Display**: Optimized for viewing from across a room
 - **Fullscreen PWA**: Install as an app on your iPad for a clean, kiosk-like experience
 - **Dark Theme**: Easy on the eyes, especially in dim lighting
 
 ## Setup
 
-### 1. Configure Your Stations
-
-Edit `src/components/SubwayStatus.tsx` and update the `STATIONS` array with your nearby stations:
-
-```typescript
-const STATIONS: StationConfig[] = [
-  { id: '137', name: '28 St', displayName: '28th St' }, // 1,2,3
-  { id: 'R17', name: '28 St', displayName: '28th St' }, // N,R,W
-  { id: 'D17', name: '34 St-Herald Sq', displayName: '34th St-Herald Sq' }, // B,D,F,M,N,Q,R,W
-];
-```
-
-Station IDs use GTFS format. The MTA API is publicly accessible (no API key required).
-
-### 2. Deploy to Cloudflare Pages
+### 1. Deploy to Cloudflare Pages
 
 #### Option A: Via Cloudflare Dashboard
 1. Push this repo to GitHub
@@ -44,7 +31,7 @@ wrangler login
 wrangler pages deploy dist
 ```
 
-### 3. Install on iPad
+### 2. Install on iPad
 
 1. Open the deployed URL in Safari on your iPad
 2. Tap the Share button > "Add to Home Screen"
@@ -79,9 +66,9 @@ const NYC_LAT = 40.7128;  // Change to your latitude
 const NYC_LON = -74.006;  // Change to your longitude
 ```
 
-### Station Direction Labels
+### Citibike Station
 
-Customize uptown/downtown labels in `src/components/SubwayStatus.tsx` based on your location.
+The Citibike widget looks up a station by the short name printed on the dock. Edit `src/components/Citibike.tsx` to change `STATION_SHORT_NAME`.
 
 ## Keeping the Screen On
 

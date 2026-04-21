@@ -52,9 +52,8 @@ export function Weather() {
         const data = await response.json();
         const current = data.current;
 
-        // Get hourly forecast starting from current hour for next 10 hours
         const now = new Date();
-        now.setMinutes(0, 0, 0); // Round down to current hour
+        now.setMinutes(0, 0, 0);
 
         const hourlyForecast: HourlyForecast[] = [];
         for (let i = 0; i < data.hourly.time.length && hourlyForecast.length < 10; i++) {
@@ -87,65 +86,50 @@ export function Weather() {
     };
 
     fetchWeather();
-    const interval = setInterval(fetchWeather, 10 * 60 * 1000); // Update every 10 minutes
+    const interval = setInterval(fetchWeather, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   if (error) {
-    return (
-      <div className="text-gray-500 text-xl">
-        {error}
-      </div>
-    );
+    return <div className="text-gray-300 text-3xl">{error}</div>;
   }
 
   if (!weather) {
-    return (
-      <div className="text-gray-500 text-xl animate-pulse">
-        Loading weather...
-      </div>
-    );
+    return <div className="text-gray-300 text-3xl animate-pulse">Loading weather...</div>;
   }
 
   const weatherInfo = weatherDescriptions[weather.weatherCode] || { label: 'Unknown', icon: '❓' };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Current Weather - Main Display */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="text-6xl">
-          {weatherInfo.icon}
-        </div>
+      <div className="flex items-center gap-5 mb-5">
+        <div className="text-8xl leading-none">{weatherInfo.icon}</div>
         <div>
-          <div className="text-7xl font-light text-white tracking-tight">
+          <div className="text-8xl font-semibold text-white tracking-tight leading-none">
             {weather.temperature}°
           </div>
-          <div className="text-lg text-gray-400 mt-1">
-            {weatherInfo.label}
-          </div>
+          <div className="text-2xl font-medium text-gray-200 mt-2">{weatherInfo.label}</div>
         </div>
       </div>
 
-      {/* Secondary Info */}
-      <div className="flex gap-6 text-lg text-gray-400 mb-6">
+      <div className="flex gap-6 text-2xl font-semibold mb-5">
         <div>
-          <span className="text-gray-500">Feels like</span>{' '}
+          <span className="text-gray-400">Feels </span>
           <span className="text-white">{weather.feelsLike}°</span>
         </div>
         <div>
-          <span className="text-gray-500">Wind</span>{' '}
+          <span className="text-gray-400">Wind </span>
           <span className="text-white">{weather.windSpeed} mph</span>
         </div>
         <div>
-          <span className="text-gray-500">UV</span>{' '}
+          <span className="text-gray-400">UV </span>
           <span className="text-white">{weather.uvIndex}</span>
         </div>
       </div>
 
-      {/* Hourly Forecast - Line Chart */}
       {weather.hourlyForecast.length > 1 && (
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="text-sm text-gray-500 uppercase tracking-wide mb-2">
+          <div className="text-lg text-gray-300 uppercase tracking-wide font-semibold mb-2">
             Next {weather.hourlyForecast.length} Hours
           </div>
           <div className="flex-1 min-h-0">
@@ -166,16 +150,14 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
   const minIdx = temps.indexOf(minTemp);
   const maxIdx = temps.lastIndexOf(maxTemp);
 
-  // ViewBox coordinate system — we let CSS scale the SVG to fit the container.
   const vbWidth = 340;
-  const iconRow = 22;
-  const chartBottom = 110;
-  const axisRow = 128;
-  const vbHeight = 140;
-  const padX = 16;
-  const chartHeight = 78;
-  // Leave headroom above the max so H/L labels don't clip the curve visually.
-  const yPad = 10;
+  const iconRow = 26;
+  const chartBottom = 118;
+  const axisRow = 140;
+  const vbHeight = 152;
+  const padX = 18;
+  const chartHeight = 90;
+  const yPad = 14;
 
   const points = hours.map((h, i) => {
     const x = padX + (i / (hours.length - 1)) * (vbWidth - padX * 2);
@@ -194,15 +176,15 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
     <svg
       viewBox={`0 0 ${vbWidth} ${vbHeight}`}
       preserveAspectRatio="xMidYMid meet"
-      className="w-full h-auto max-h-full"
+      className="w-full h-full"
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#67e8f9" />
+          <stop offset="0%" stopColor="#93c5fd" />
+          <stop offset="100%" stopColor="#a5f3fc" />
         </linearGradient>
         <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.45" />
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.55" />
           <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0.05" />
         </linearGradient>
       </defs>
@@ -210,13 +192,7 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
       {points.map((p, i) => {
         const icon = weatherDescriptions[hours[i].weatherCode]?.icon ?? '❓';
         return (
-          <text
-            key={`icon-${i}`}
-            x={p.x}
-            y={iconRow}
-            textAnchor="middle"
-            fontSize="14"
-          >
+          <text key={`icon-${i}`} x={p.x} y={iconRow} textAnchor="middle" fontSize="18">
             {icon}
           </text>
         );
@@ -228,15 +204,13 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         d={linePath}
         fill="none"
         stroke={`url(#${gradientId})`}
-        strokeWidth="2.5"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      <TempMarker point={points[maxIdx]} label="H" stroke="#67e8f9" above />
-      {minIdx !== maxIdx && (
-        <TempMarker point={points[minIdx]} label="L" stroke="#60a5fa" />
-      )}
+      <TempMarker point={points[maxIdx]} label="H" stroke="#a5f3fc" above />
+      {minIdx !== maxIdx && <TempMarker point={points[minIdx]} label="L" stroke="#93c5fd" />}
 
       {axisTicks(hours.length).map((i) => (
         <text
@@ -244,8 +218,9 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
           x={points[i].x}
           y={axisRow}
           textAnchor="middle"
-          fontSize="10"
-          fill="#6b7280"
+          fontSize="13"
+          fontWeight="600"
+          fill="#d1d5db"
         >
           {formatHour(hours[i].time)}
         </text>
@@ -267,14 +242,14 @@ function TempMarker({
 }) {
   return (
     <>
-      <circle cx={point.x} cy={point.y} r="4" fill="#0f172a" stroke={stroke} strokeWidth="2" />
+      <circle cx={point.x} cy={point.y} r="5" fill="#0f172a" stroke={stroke} strokeWidth="2.5" />
       <text
         x={point.x}
-        y={point.y + (above ? -10 : 16)}
+        y={point.y + (above ? -12 : 20)}
         textAnchor="middle"
-        fontSize="11"
-        fill="#e5e7eb"
-        fontWeight="600"
+        fontSize="15"
+        fill="#ffffff"
+        fontWeight="700"
       >
         {label} {point.temp}°
       </text>

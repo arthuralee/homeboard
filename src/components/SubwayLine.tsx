@@ -42,9 +42,9 @@ export function SubwayLine({ line, size = 'md' }: SubwayLineProps) {
   const textColor = darkTextLines.includes(line) ? '#000000' : '#FFFFFF';
 
   const sizeClasses = {
-    sm: 'w-6 h-6 text-sm',
-    md: 'w-10 h-10 text-xl',
-    lg: 'w-12 h-12 text-2xl',
+    sm: 'w-9 h-9 text-lg',
+    md: 'w-12 h-12 text-2xl',
+    lg: 'w-16 h-16 text-3xl',
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubwayLine } from './SubwayLine';
 import type { CalendarEvent } from '../hooks/useCalendar';
-import { useCommute, type TransitOption } from '../hooks/useCommute';
+import { useCommute, type CommuteOption, type TransitOption } from '../hooks/useCommute';
 import { useNow } from '../hooks/useNow';
 
 interface Arrival {
@@ -33,12 +33,6 @@ function formatLeaveBy(target: Date, now: Date): string {
   if (diffMins <= 0) return 'Leave now';
   if (diffMins < 30) return `Leave in ${diffMins}m`;
   return `Leave at ${formatClockTime(target)}`;
-}
-
-function formatArrivalBadge(arrivalTime: string, now: Date): string {
-  const diffMins = Math.floor((new Date(arrivalTime).getTime() - now.getTime()) / 60_000);
-  if (diffMins <= 0) return 'now';
-  return `${diffMins}m`;
 }
 
 function formatEventWhen(start: Date, now: Date): string {
@@ -88,16 +82,16 @@ function useSubwayArrivals(stationIds: string[]): { arrivals: Arrival[]; error: 
 }
 
 function EventHeader({ event, now, subtle }: { event: CalendarEvent; now: Date; subtle?: boolean }) {
-  const titleSize = subtle ? 'text-3xl' : 'text-2xl';
+  const titleSize = subtle ? 'text-5xl' : 'text-4xl';
   return (
     <div className="flex-shrink-0">
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+      <div className="text-lg text-gray-300 uppercase tracking-wider font-semibold mb-2">
         Up next{!subtle && ` · in ${formatCountdown(event.start, now)}`}
       </div>
       <div className={`${titleSize} font-bold text-white leading-tight truncate`}>
         {event.summary}
       </div>
-      <div className="text-base text-gray-300 mt-0.5 truncate">
+      <div className="text-2xl text-gray-200 mt-2 truncate font-medium">
         {event.location ? `${event.location} · ` : ''}
         {subtle ? formatEventWhen(event.start, now) : formatClockTime(event.start)}
       </div>
@@ -121,16 +115,16 @@ function SimpleOptionBlock({
   dimmed?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-between rounded-xl bg-gray-900/40 p-3 ${dimmed ? 'opacity-40' : ''}`}>
-      <div className="flex items-center gap-3 min-w-0">
+    <div className={`rounded-xl bg-gray-900/60 px-4 py-3 ${dimmed ? 'opacity-40' : ''}`}>
+      <div className="flex items-center gap-3 text-2xl font-bold text-white">
         <span className="text-3xl" aria-hidden>{emoji}</span>
-        <div className="min-w-0">
-          <div className="text-xl font-semibold text-white">{label}</div>
-          <div className="text-sm text-gray-400">{subtitle}</div>
-        </div>
+        <span>{label}</span>
+        <span className="text-gray-300 font-medium">{subtitle}</span>
       </div>
       {!dimmed && (
-        <div className="text-sm text-gray-300 whitespace-nowrap">{formatLeaveBy(departureTime, now)}</div>
+        <div className="mt-1 text-xl text-white font-semibold">
+          {formatLeaveBy(departureTime, now)}
+        </div>
       )}
     </div>
   );
@@ -154,56 +148,44 @@ function TransitBlock({
   arrivals: Arrival[];
   now: Date;
 }) {
-  const upcoming = arrivals
+  // Earliest train the user can realistically catch: they have to finish
+  // walking to the station first.
+  const reachStationAt = now.getTime() + option.walkToStationMinutes * 60_000;
+  const catchable = arrivals
     .filter(
       (a) =>
         a.stationId === option.transit.stationId &&
         a.routeId === option.transit.line &&
         a.direction === option.transit.direction &&
-        new Date(a.arrivalTime).getTime() > now.getTime(),
+        new Date(a.arrivalTime).getTime() >= reachStationAt,
     )
-    .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime())
-    .slice(0, 3);
+    .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
 
-  const summaryBits = [
-    `${option.totalMinutes} min`,
-    option.transferCount === 0 ? 'direct' : `${option.transferCount} transfer${option.transferCount > 1 ? 's' : ''}`,
-  ];
+  const nextCatch = catchable[0];
+  const waitMinutes = nextCatch
+    ? Math.max(0, Math.round((new Date(nextCatch.arrivalTime).getTime() - reachStationAt) / 60_000))
+    : null;
 
   return (
-    <div className="rounded-xl bg-gray-900/40 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <SubwayLine line={option.transit.line} size="md" />
-          <div className="min-w-0">
-            <div className="text-xl font-semibold text-white truncate">
-              {option.transit.displayName}
-            </div>
-            <div className="text-sm text-gray-400 truncate">toward {option.transit.headsign}</div>
-          </div>
-        </div>
-        <div className="text-sm text-gray-300 whitespace-nowrap flex-shrink-0">
-          {formatLeaveBy(option.departureTime, now)}
-        </div>
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-base text-gray-200 flex-wrap">
+    <div className="rounded-xl bg-gray-900/60 px-4 py-3">
+      <div className="flex items-center gap-2 text-2xl font-bold text-white flex-wrap">
         <WalkDuration minutes={option.walkToStationMinutes} />
-        <span className="text-gray-500" aria-hidden>›</span>
-        <SubwayLine line={option.transit.line} size="sm" />
-        <span className="text-gray-500" aria-hidden>›</span>
-        <WalkDuration minutes={option.walkFromStationMinutes} />
-        <span className="text-sm text-gray-500 ml-1">· {summaryBits.join(' · ')}</span>
-      </div>
-      <div className="mt-1 text-base text-gray-200">
-        {option.transit.stationId === null ? (
-          <span className="text-gray-500">
-            No live-arrivals mapping for "{option.transit.googleStationName}"
-          </span>
-        ) : upcoming.length === 0 ? (
-          <span className="text-gray-500">No upcoming trains</span>
-        ) : (
-          <>Next: {upcoming.map((a) => formatArrivalBadge(a.arrivalTime, now)).join(' · ')}</>
+        {waitMinutes !== null && (
+          <>
+            <span className="text-gray-400" aria-hidden>›</span>
+            <span className="flex items-center gap-1">
+              <span aria-hidden>⏳</span>
+              <span>{waitMinutes}m</span>
+            </span>
+          </>
         )}
+        <span className="text-gray-400" aria-hidden>›</span>
+        <SubwayLine line={option.transit.line} size="md" />
+        <span className="text-gray-400" aria-hidden>›</span>
+        <WalkDuration minutes={option.walkFromStationMinutes} />
+      </div>
+      <div className="mt-1 text-xl text-white font-semibold">
+        {formatLeaveBy(option.departureTime, now)}
       </div>
     </div>
   );
@@ -225,6 +207,11 @@ export function CommuteCard({ event }: CommuteCardProps) {
 
   const { arrivals, error: subwayError } = useSubwayArrivals(stationIds);
 
+  const orderedOptions = useMemo(() => {
+    const kindRank: Record<CommuteOption['kind'], number> = { walk: 0, drive: 1, transit: 2 };
+    return [...options].sort((a, b) => kindRank[a.kind] - kindRank[b.kind]);
+  }, [options]);
+
   if (farAway) {
     return (
       <div className="h-full flex flex-col">
@@ -234,26 +221,26 @@ export function CommuteCard({ event }: CommuteCardProps) {
   }
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="h-full flex flex-col gap-4">
       <EventHeader event={event} now={now} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
-        {loading && options.length === 0 ? (
-          <div className="text-gray-500 text-lg animate-pulse">Looking up routes…</div>
-        ) : options.length === 0 ? (
-          <div className="text-gray-500 text-lg">
+      <div className="flex-1 min-h-0 space-y-2">
+        {loading && orderedOptions.length === 0 ? (
+          <div className="text-gray-300 text-2xl animate-pulse">Looking up routes…</div>
+        ) : orderedOptions.length === 0 ? (
+          <div className="text-gray-300 text-2xl">
             {error ? `No routes (${error})` : 'No routes available'}
           </div>
         ) : (
           <>
-            {options.map((o, idx) => {
+            {orderedOptions.map((o, idx) => {
               if (o.kind === 'walk') {
                 return (
                   <SimpleOptionBlock
                     key={idx}
                     emoji="🚶"
                     label="Walk"
-                    subtitle={`${o.totalMinutes} min`}
+                    subtitle={`${o.totalMinutes}m`}
                     departureTime={o.departureTime}
                     now={now}
                     dimmed={o.totalMinutes >= 30}
@@ -266,7 +253,7 @@ export function CommuteCard({ event }: CommuteCardProps) {
                     key={idx}
                     emoji="🚗"
                     label="Car"
-                    subtitle={`${o.totalMinutes} min with traffic`}
+                    subtitle={`${o.totalMinutes}m with traffic`}
                     departureTime={o.departureTime}
                     now={now}
                   />
@@ -275,7 +262,7 @@ export function CommuteCard({ event }: CommuteCardProps) {
               return <TransitBlock key={idx} option={o} arrivals={arrivals} now={now} />;
             })}
             {subwayError && (
-              <div className="text-xs text-gray-500">Subway live data: {subwayError}</div>
+              <div className="text-base text-gray-300">Subway live data: {subwayError}</div>
             )}
           </>
         )}
