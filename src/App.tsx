@@ -85,7 +85,7 @@ function App() {
           </Widget>
         )}
 
-        <Widget title="Weather" className="col-span-2 col-start-5 row-span-6">
+        <Widget title="Weather" className="col-span-2 col-start-5 row-span-4">
           <Weather />
         </Widget>
 

@@ -151,13 +151,13 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
   const maxIdx = temps.lastIndexOf(maxTemp);
 
   const vbWidth = 340;
-  const iconRow = 26;
+  const iconRow = 16;
   const chartBottom = 118;
   const axisRow = 140;
   const vbHeight = 152;
   const padX = 18;
-  const chartHeight = 90;
-  const yPad = 14;
+  const chartHeight = 70;
+  const yPad = 18;
 
   const points = hours.map((h, i) => {
     const x = padX + (i / (hours.length - 1)) * (vbWidth - padX * 2);
