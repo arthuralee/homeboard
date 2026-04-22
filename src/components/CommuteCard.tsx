@@ -19,6 +19,16 @@ function formatClockTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function formatClockTimeShort(date: Date): string {
+  const hours24 = date.getHours();
+  const minutes = date.getMinutes();
+  const period = hours24 >= 12 ? 'pm' : 'am';
+  const hours12 = hours24 % 12 || 12;
+  return minutes === 0
+    ? `${hours12}${period}`
+    : `${hours12}:${String(minutes).padStart(2, '0')}${period}`;
+}
+
 function formatCountdown(target: Date, now: Date): string {
   const diffMins = Math.round((target.getTime() - now.getTime()) / 60_000);
   if (diffMins <= 0) return 'now';
@@ -40,14 +50,14 @@ function formatEventWhen(start: Date, now: Date): string {
   const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
   const dayDiff = Math.round((startDay.getTime() - nowDay.getTime()) / 86_400_000);
 
-  const timeStr = formatClockTime(start);
-  if (dayDiff === 0) return `at ${timeStr}`;
-  if (dayDiff === 1) return `tomorrow at ${timeStr}`;
+  const timeStr = formatClockTimeShort(start);
+  if (dayDiff === 0) return timeStr;
+  if (dayDiff === 1) return `Tomorrow ${timeStr}`;
   if (dayDiff > 1 && dayDiff < 7) {
-    const weekday = start.toLocaleDateString([], { weekday: 'long' });
-    return `on ${weekday} at ${timeStr}`;
+    const weekday = start.toLocaleDateString([], { weekday: 'short' });
+    return `${weekday} ${timeStr}`;
   }
-  return `${start.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at ${timeStr}`;
+  return `${start.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${timeStr}`;
 }
 
 function useSubwayArrivals(stationIds: string[]): { arrivals: Arrival[]; error: string | null } {
