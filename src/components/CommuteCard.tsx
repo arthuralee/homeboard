@@ -101,10 +101,23 @@ function EventHeader({ event, now, subtle }: { event: CalendarEvent; now: Date; 
       <div className={`${titleSize} font-bold text-white leading-tight truncate`}>
         {event.summary}
       </div>
-      <div className="text-2xl text-gray-200 mt-2 truncate font-medium">
-        {event.location ? `${event.location} · ` : ''}
-        {subtle ? formatEventWhen(event.start, now) : formatClockTime(event.start)}
-      </div>
+      {subtle ? (
+        <>
+          {event.location && (
+            <div className="text-2xl text-gray-200 mt-2 truncate font-medium">
+              {event.location}
+            </div>
+          )}
+          <div className="text-2xl text-gray-200 mt-1 truncate font-medium">
+            {formatEventWhen(event.start, now)}
+          </div>
+        </>
+      ) : (
+        <div className="text-2xl text-gray-200 mt-2 truncate font-medium">
+          {event.location ? `${event.location} · ` : ''}
+          {formatClockTime(event.start)}
+        </div>
+      )}
     </div>
   );
 }
