@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { WeatherData, HourlyForecast } from '../types';
 
 // Weather codes from Open-Meteo WMO codes
@@ -105,18 +105,20 @@ export function Weather() {
       <div className="flex items-center gap-4 mb-4">
         <div className="text-6xl leading-none">{weatherInfo.icon}</div>
         <div>
-          <div className="text-6xl font-semibold text-white tracking-tight leading-none">
-            {weather.temperature}°
+          <div className="flex items-baseline gap-4">
+            <div className="text-6xl font-semibold text-white tracking-tight leading-none">
+              {weather.temperature}°
+            </div>
+            <div className="text-2xl font-semibold leading-none">
+              <span className="text-gray-400">Feels </span>
+              <span className="text-white">{weather.feelsLike}°</span>
+            </div>
           </div>
           <div className="text-xl font-medium text-gray-200 mt-1">{weatherInfo.label}</div>
         </div>
       </div>
 
-      <div className="flex gap-6 text-2xl font-semibold mb-5">
-        <div>
-          <span className="text-gray-400">Feels </span>
-          <span className="text-white">{weather.feelsLike}°</span>
-        </div>
+      <div className="flex gap-6 text-2xl font-semibold mb-5 whitespace-nowrap">
         <div>
           <span className="text-gray-400">Wind </span>
           <span className="text-white">{weather.windSpeed} mph</span>
@@ -142,6 +144,24 @@ export function Weather() {
 }
 
 function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ w: 600, h: 180 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSize({ w: Math.round(rect.width), h: Math.round(rect.height) });
+      }
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const temps = hours.map((h) => h.temperature);
   const minTemp = Math.min(...temps);
   const maxTemp = Math.max(...temps);
@@ -150,14 +170,14 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
   const minIdx = temps.indexOf(minTemp);
   const maxIdx = temps.lastIndexOf(maxTemp);
 
-  const vbWidth = 340;
-  const iconRow = 16;
-  const chartBottom = 118;
-  const axisRow = 140;
-  const vbHeight = 152;
-  const padX = 18;
-  const chartHeight = 70;
-  const yPad = 18;
+  const vbWidth = size.w;
+  const vbHeight = size.h;
+  const iconRow = vbHeight * 0.11;
+  const chartBottom = vbHeight * 0.78;
+  const axisRow = vbHeight * 0.95;
+  const padX = 32;
+  const chartHeight = vbHeight * 0.46;
+  const yPad = vbHeight * 0.12;
 
   const points = hours.map((h, i) => {
     const x = padX + (i / (hours.length - 1)) * (vbWidth - padX * 2);
@@ -173,6 +193,7 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
   const fillId = 'weatherAreaGradient';
 
   return (
+    <div ref={containerRef} className="w-full h-full">
     <svg
       viewBox={`0 0 ${vbWidth} ${vbHeight}`}
       preserveAspectRatio="xMidYMid meet"
@@ -226,6 +247,7 @@ function HourlyLineChart({ hours }: { hours: HourlyForecast[] }) {
         </text>
       ))}
     </svg>
+    </div>
   );
 }
 
