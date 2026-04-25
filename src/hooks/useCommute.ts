@@ -9,8 +9,16 @@ import {
 
 // Passed as ?v= on the fetch URL to bust the CF edge cache when the
 // request/response shape changes.
-const COMMUTE_CACHE_VERSION = 3;
+const COMMUTE_CACHE_VERSION = 4;
 
+interface RawTransitLeg {
+  station: string;
+  arrivalStation: string;
+  line: string;
+  headsign: string;
+  departureTime: string;
+  arrivalTime: string;
+}
 
 interface RawTransitOption {
   totalMinutes: number;
@@ -19,14 +27,7 @@ interface RawTransitOption {
   walkToStationMinutes: number;
   walkFromStationMinutes: number;
   transferCount: number;
-  transit: {
-    station: string;
-    arrivalStation: string;
-    line: string;
-    headsign: string;
-    departureTime: string;
-    arrivalTime: string;
-  };
+  legs: RawTransitLeg[];
 }
 
 interface RawSimpleOption {
@@ -54,6 +55,18 @@ export interface DriveOption {
   departureTime: Date;
 }
 
+export interface TransitLeg {
+  stationId: string | null;
+  displayName: string;
+  googleStationName: string;
+  arrivalStationName: string;
+  line: string;
+  direction: 'N' | 'S';
+  headsign: string;
+  trainDeparture: Date;
+  trainArrival: Date;
+}
+
 export interface TransitOption {
   kind: 'transit';
   totalMinutes: number;
@@ -61,15 +74,7 @@ export interface TransitOption {
   walkToStationMinutes: number;
   walkFromStationMinutes: number;
   transferCount: number;
-  transit: {
-    stationId: string | null;
-    displayName: string;
-    googleStationName: string;
-    line: string;
-    direction: 'N' | 'S';
-    headsign: string;
-    trainDeparture: Date;
-  };
+  legs: TransitLeg[];
 }
 
 export type CommuteOption = WalkOption | TransitOption | DriveOption;
@@ -99,7 +104,20 @@ function hydrate(raw: RawCommuteResponse): CommuteOption[] {
     });
   }
   for (const t of raw.transit) {
-    const mapped = GOOGLE_STATION_MAP[`${t.transit.station}|${t.transit.line}`];
+    const legs: TransitLeg[] = t.legs.map((leg) => {
+      const mapped = GOOGLE_STATION_MAP[`${leg.station}|${leg.line}`];
+      return {
+        stationId: mapped?.stationId ?? null,
+        displayName: mapped?.displayName ?? `${leg.station} (${leg.line})`,
+        googleStationName: leg.station,
+        arrivalStationName: leg.arrivalStation,
+        line: leg.line,
+        direction: resolveDirection(leg.line, leg.headsign),
+        headsign: leg.headsign,
+        trainDeparture: new Date(leg.departureTime),
+        trainArrival: new Date(leg.arrivalTime),
+      };
+    });
     out.push({
       kind: 'transit',
       totalMinutes: t.totalMinutes,
@@ -107,15 +125,7 @@ function hydrate(raw: RawCommuteResponse): CommuteOption[] {
       walkToStationMinutes: t.walkToStationMinutes,
       walkFromStationMinutes: t.walkFromStationMinutes,
       transferCount: t.transferCount,
-      transit: {
-        stationId: mapped?.stationId ?? null,
-        displayName: mapped?.displayName ?? `${t.transit.station} (${t.transit.line})`,
-        googleStationName: t.transit.station,
-        line: t.transit.line,
-        direction: resolveDirection(t.transit.line, t.transit.headsign),
-        headsign: t.transit.headsign,
-        trainDeparture: new Date(t.transit.departureTime),
-      },
+      legs,
     });
   }
   if (raw.drive) {
