@@ -45,6 +45,34 @@ function formatLeaveBy(target: Date, now: Date): string {
   return `Leave at ${formatClockTime(target)}`;
 }
 
+function LeaveBySummary({
+  departureTime,
+  totalMinutes,
+  eventStart,
+  now,
+}: {
+  departureTime: Date;
+  totalMinutes: number;
+  eventStart: Date;
+  now: Date;
+}) {
+  const departDiffMins = Math.round((departureTime.getTime() - now.getTime()) / 60_000);
+  const isLeaveNow = departDiffMins <= 0;
+  const etaMs = now.getTime() + totalMinutes * 60_000;
+  const minsLate = Math.round((etaMs - eventStart.getTime()) / 60_000);
+
+  return (
+    <div className="mt-1 text-lg text-white font-semibold">
+      {formatLeaveBy(departureTime, now)}
+      {isLeaveNow && minsLate > 0 && (
+        <span className="ml-2 text-red-500">
+          {minsLate} {minsLate === 1 ? 'min' : 'mins'} late
+        </span>
+      )}
+    </div>
+  );
+}
+
 function formatEventWhen(start: Date, now: Date): string {
   const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -127,6 +155,8 @@ function SimpleOptionBlock({
   label,
   subtitle,
   departureTime,
+  totalMinutes,
+  eventStart,
   now,
   dimmed,
 }: {
@@ -134,6 +164,8 @@ function SimpleOptionBlock({
   label: string;
   subtitle: string;
   departureTime: Date;
+  totalMinutes: number;
+  eventStart: Date;
   now: Date;
   dimmed?: boolean;
 }) {
@@ -145,9 +177,12 @@ function SimpleOptionBlock({
         <span className="text-gray-300 font-medium">{subtitle}</span>
       </div>
       {!dimmed && (
-        <div className="mt-1 text-lg text-white font-semibold">
-          {formatLeaveBy(departureTime, now)}
-        </div>
+        <LeaveBySummary
+          departureTime={departureTime}
+          totalMinutes={totalMinutes}
+          eventStart={eventStart}
+          now={now}
+        />
       )}
     </div>
   );
@@ -160,10 +195,12 @@ function WalkDuration({ minutes }: { minutes: number }) {
 function TransitBlock({
   option,
   arrivals,
+  eventStart,
   now,
 }: {
   option: TransitOption;
   arrivals: Arrival[];
+  eventStart: Date;
   now: Date;
 }) {
   // Earliest train the user can realistically catch: they have to finish
@@ -202,9 +239,12 @@ function TransitBlock({
         <span className="text-gray-400" aria-hidden>›</span>
         <WalkDuration minutes={option.walkFromStationMinutes} />
       </div>
-      <div className="mt-1 text-lg text-white font-semibold">
-        {formatLeaveBy(option.departureTime, now)}
-      </div>
+      <LeaveBySummary
+        departureTime={option.departureTime}
+        totalMinutes={option.totalMinutes}
+        eventStart={eventStart}
+        now={now}
+      />
     </div>
   );
 }
@@ -260,6 +300,8 @@ export function CommuteCard({ event }: CommuteCardProps) {
                     label="Walk"
                     subtitle={`${o.totalMinutes}m`}
                     departureTime={o.departureTime}
+                    totalMinutes={o.totalMinutes}
+                    eventStart={event.start}
                     now={now}
                     dimmed={o.totalMinutes >= 30}
                   />
@@ -273,11 +315,21 @@ export function CommuteCard({ event }: CommuteCardProps) {
                     label="Car"
                     subtitle={`${o.totalMinutes}m with traffic`}
                     departureTime={o.departureTime}
+                    totalMinutes={o.totalMinutes}
+                    eventStart={event.start}
                     now={now}
                   />
                 );
               }
-              return <TransitBlock key={idx} option={o} arrivals={arrivals} now={now} />;
+              return (
+                <TransitBlock
+                  key={idx}
+                  option={o}
+                  arrivals={arrivals}
+                  eventStart={event.start}
+                  now={now}
+                />
+              );
             })}
             {subwayError && (
               <div className="text-base text-gray-300">Subway live data: {subwayError}</div>
