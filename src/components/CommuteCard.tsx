@@ -203,15 +203,16 @@ function TransitBlock({
   eventStart: Date;
   now: Date;
 }) {
+  const boarding = option.legs[0];
   // Earliest train the user can realistically catch: they have to finish
   // walking to the station first.
   const reachStationAt = now.getTime() + option.walkToStationMinutes * 60_000;
   const catchable = arrivals
     .filter(
       (a) =>
-        a.stationId === option.transit.stationId &&
-        a.routeId === option.transit.line &&
-        a.direction === option.transit.direction &&
+        a.stationId === boarding.stationId &&
+        a.routeId === boarding.line &&
+        a.direction === boarding.direction &&
         new Date(a.arrivalTime).getTime() >= reachStationAt,
     )
     .sort((a, b) => new Date(a.arrivalTime).getTime() - new Date(b.arrivalTime).getTime());
@@ -221,22 +222,28 @@ function TransitBlock({
     ? Math.max(0, Math.round((new Date(nextCatch.arrivalTime).getTime() - reachStationAt) / 60_000))
     : null;
 
+  const arrow = <span className="text-gray-400" aria-hidden>›</span>;
+
   return (
     <div className="rounded-xl bg-gray-900/60 px-4 py-3">
       <div className="flex items-center gap-2 text-xl font-bold text-white flex-wrap">
         <WalkDuration minutes={option.walkToStationMinutes} />
         {waitMinutes !== null && (
           <>
-            <span className="text-gray-400" aria-hidden>›</span>
+            {arrow}
             <span className="flex items-center gap-1">
               <span aria-hidden>⏳</span>
               <span>{waitMinutes}m</span>
             </span>
           </>
         )}
-        <span className="text-gray-400" aria-hidden>›</span>
-        <SubwayLine line={option.transit.line} size="md" />
-        <span className="text-gray-400" aria-hidden>›</span>
+        {option.legs.map((leg, i) => (
+          <span key={i} className="flex items-center gap-2">
+            {arrow}
+            <SubwayLine line={leg.line} size="md" />
+          </span>
+        ))}
+        {arrow}
         <WalkDuration minutes={option.walkFromStationMinutes} />
       </div>
       <LeaveBySummary
@@ -256,8 +263,8 @@ export function CommuteCard({ event }: CommuteCardProps) {
   const stationIds = useMemo(() => {
     const ids = new Set<string>();
     for (const o of options) {
-      if (o.kind === 'transit' && o.transit.stationId) {
-        ids.add(o.transit.stationId);
+      if (o.kind === 'transit' && o.legs[0]?.stationId) {
+        ids.add(o.legs[0].stationId);
       }
     }
     return Array.from(ids);

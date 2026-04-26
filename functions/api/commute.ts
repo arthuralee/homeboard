@@ -24,7 +24,7 @@ interface TransitOption {
   walkToStationMinutes: number;
   walkFromStationMinutes: number;
   transferCount: number;
-  transit: TransitStep;
+  legs: TransitStep[];
 }
 
 interface SimpleOption {
@@ -132,17 +132,35 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
     const totalSeconds = parseDurationSeconds(route.duration);
     const steps = route.legs?.[0]?.steps ?? [];
 
-    // Find the first transit step (subway specifically).
-    const firstTransitIdx = steps.findIndex(
-      (s) =>
-        s.travelMode === 'TRANSIT' &&
-        s.transitDetails?.transitLine?.vehicle?.type === 'SUBWAY',
-    );
-    if (firstTransitIdx === -1) continue;
+    // Collect every subway leg in order. We require the first one to be a
+    // subway (matches the previous behavior — bus-then-subway routes are
+    // dropped); subsequent legs that aren't SUBWAY are skipped so we don't
+    // render unsupported vehicles in the chain.
+    const transitIndices = steps
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => s.travelMode === 'TRANSIT');
+    if (transitIndices.length === 0) continue;
+    const firstTransitIdx = transitIndices[0].i;
+    if (
+      transitIndices[0].s.transitDetails?.transitLine?.vehicle?.type !== 'SUBWAY'
+    ) {
+      continue;
+    }
 
-    const boardingStep = steps[firstTransitIdx];
-    const td = boardingStep.transitDetails;
-    if (!td) continue;
+    const legs: TransitStep[] = [];
+    for (const { s } of transitIndices) {
+      if (s.transitDetails?.transitLine?.vehicle?.type !== 'SUBWAY') continue;
+      const td = s.transitDetails;
+      legs.push({
+        station: td.stopDetails?.departureStop?.name ?? '',
+        arrivalStation: td.stopDetails?.arrivalStop?.name ?? '',
+        line: normalizeLineName(td.transitLine?.nameShort),
+        headsign: td.headsign ?? '',
+        departureTime: td.stopDetails?.departureTime ?? '',
+        arrivalTime: td.stopDetails?.arrivalTime ?? '',
+      });
+    }
+    if (legs.length === 0) continue;
 
     // Sum WALK steps preceding the first subway step.
     const walkToStationSeconds = steps
@@ -150,15 +168,11 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       .filter((s) => s.travelMode === 'WALK')
       .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
 
-    const lastTransitIdx = steps.findLastIndex((s) => s.travelMode === 'TRANSIT');
+    const lastTransitIdx = transitIndices[transitIndices.length - 1].i;
     const walkFromStationSeconds = steps
       .slice(lastTransitIdx + 1)
       .filter((s) => s.travelMode === 'WALK')
       .reduce((acc, s) => acc + parseDurationSeconds(s.staticDuration), 0);
-
-    // Transfers = number of TRANSIT steps minus 1 (counting any vehicle).
-    const transitStepCount = steps.filter((s) => s.travelMode === 'TRANSIT').length;
-    const transferCount = Math.max(0, transitStepCount - 1);
 
     raw.push({
       totalMinutes: Math.round(totalSeconds / 60),
@@ -166,22 +180,18 @@ function extractTransitOptions(data: RoutesApiResponse, arriveByDate: Date): Tra
       arrivalTime: arriveByDate.toISOString(),
       walkToStationMinutes: Math.round(walkToStationSeconds / 60),
       walkFromStationMinutes: Math.round(walkFromStationSeconds / 60),
-      transferCount,
-      transit: {
-        station: td.stopDetails?.departureStop?.name ?? '',
-        arrivalStation: td.stopDetails?.arrivalStop?.name ?? '',
-        line: normalizeLineName(td.transitLine?.nameShort),
-        headsign: td.headsign ?? '',
-        departureTime: td.stopDetails?.departureTime ?? '',
-        arrivalTime: td.stopDetails?.arrivalTime ?? '',
-      },
+      transferCount: Math.max(0, legs.length - 1),
+      legs,
     });
   }
 
-  // De-dup by (station, line, headsign); keep fastest, tiebreak by fewer transfers.
+  // De-dup by full leg signature (boarding station + every line + headsign);
+  // keep fastest, tiebreak by fewer transfers.
   const bySig = new Map<string, TransitOption>();
   for (const opt of raw) {
-    const sig = `${opt.transit.station}|${opt.transit.line}|${opt.transit.headsign}`;
+    const sig = opt.legs
+      .map((l, i) => (i === 0 ? `${l.station}|${l.line}|${l.headsign}` : `${l.line}|${l.headsign}`))
+      .join('»');
     const existing = bySig.get(sig);
     if (
       !existing ||
