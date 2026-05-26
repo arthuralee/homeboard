@@ -43,11 +43,22 @@ export function Weather() {
     const fetchWeather = async () => {
       try {
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2&timezone=${encodeURIComponent(timezone)}`
-        );
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${NYC_LAT}&longitude=${NYC_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&forecast_days=2&timezone=${encodeURIComponent(timezone)}`;
 
-        if (!response.ok) throw new Error('Failed to fetch weather');
+        // Open-Meteo's public endpoint intermittently returns 5xx, so retry
+        // transient failures with backoff before giving up.
+        let response: Response | null = null;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+          try {
+            response = await fetch(url);
+            if (response.ok) break;
+          } catch {
+            response = null;
+          }
+        }
+
+        if (!response || !response.ok) throw new Error('Failed to fetch weather');
 
         const data = await response.json();
         const current = data.current;
@@ -80,7 +91,12 @@ export function Weather() {
         });
         setError(null);
       } catch (err) {
-        setError('Weather unavailable');
+        // Keep showing the last good reading on a failed refresh; only surface
+        // an error when we have nothing to display yet.
+        setWeather((prev) => {
+          if (!prev) setError('Weather unavailable');
+          return prev;
+        });
         console.error('Weather fetch error:', err);
       }
     };
